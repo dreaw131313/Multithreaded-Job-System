@@ -1,7 +1,7 @@
 #pragma once
 #include "Core.h"
 
-#include "JobsThreadContext.h"
+#include "ThreadContext.h"
 
 namespace JobSystem
 {
@@ -20,28 +20,28 @@ namespace JobSystem
 
 		}
 
-		virtual void Execute(
+		virtual void Execute_Internal(
 			int64_t jobContextIndex,
 			int64_t jobElementCount,
 			int64_t desiredBatchSize,
-			const JobsThreadContext& threadContext
+			const ThreadContext& threadContext
 		) = 0;
 	};
 
 	class Job : public JobBase
 	{
 	public:
-		virtual void Execute() = 0;
+		virtual void Execute(const ThreadContext& threadContext) = 0;
 
 	private:
-		virtual void Execute(
+		virtual void Execute_Internal(
 			int64_t jobContextIndex,
 			int64_t jobElementCount,
 			int64_t desiredBatchSize,
-			const JobsThreadContext& threadContext
+			const ThreadContext& threadContext
 		) final
 		{
-			Execute();
+			Execute(threadContext);
 		}
 	};
 
@@ -49,14 +49,14 @@ namespace JobSystem
 	{
 		friend class JobSystemManager;
 	public:
-		virtual void Execute(int64_t index) = 0;
+		virtual void Execute(int64_t batchIndex, int64_t index, const ThreadContext& threadContext) = 0;
 
 	private:
-		virtual void Execute(
+		virtual void Execute_Internal(
 			int64_t jobContextIndex,
 			int64_t jobElementCount,
 			int64_t desiredBatchSize,
-			const JobsThreadContext& threadContext
+			const ThreadContext& threadContext
 		) final
 		{
 			if (jobElementCount <= 0 || desiredBatchSize <= 0)
@@ -75,7 +75,7 @@ namespace JobSystem
 
 			for (int64_t index = 0; index < count; index++)
 			{
-				Execute(index);
+				Execute(index, jobContextIndex, threadContext);
 			}
 		}
 	};
@@ -83,14 +83,14 @@ namespace JobSystem
 	class JobParallelForBatch : public JobBase
 	{
 	public:
-		virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count) = 0;
+		virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count, const ThreadContext& threadContext) = 0;
 
 	private:
-		virtual void Execute(
+		virtual void Execute_Internal(
 			int64_t jobContextIndex,
 			int64_t jobElementCount,
 			int64_t desiredBatchSize,
-			const JobsThreadContext& threadContext
+			const ThreadContext& threadContext
 		) final
 		{
 			if (jobElementCount <= 0 || desiredBatchSize <= 0)
@@ -107,7 +107,7 @@ namespace JobSystem
 
 			int64_t count = distanceToEnd >= desiredBatchSize ? desiredBatchSize : distanceToEnd;
 
-			Execute(jobContextIndex, startIndex, count);
+			Execute(jobContextIndex, startIndex, count, threadContext);
 		}
 	};
 }

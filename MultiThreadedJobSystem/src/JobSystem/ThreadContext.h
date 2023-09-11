@@ -3,11 +3,11 @@
 
 namespace JobSystem
 {
-	class JobsThreadContext
+	class ThreadContext
 	{
 		friend class JobSystemManager;
 	public:
-		JobsThreadContext(uint32_t threadID) :
+		ThreadContext(uint32_t threadID) :
 			m_ThreadID(threadID)
 		{
 

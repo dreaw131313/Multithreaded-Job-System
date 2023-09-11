@@ -3,7 +3,7 @@
 #include "Job.h"
 #include "JobDependency.h"
 
-#include "JobsThreadContext.h"
+#include "ThreadContext.h"
 #include "JobQueue.h"
 
 namespace JobSystem
@@ -55,7 +55,7 @@ namespace JobSystem
 				m_ThreadsCount = workerThreadCount;
 			}
 
-			auto threadLoop = [](JobsThreadContext* context, JobQueue* jobQueue)
+			auto threadLoop = [](ThreadContext* context, JobQueue* jobQueue)
 			{
 				if (jobQueue == nullptr || context == nullptr)
 				{
@@ -79,7 +79,7 @@ namespace JobSystem
 					// after getting job execute and complete it and reset acquire job result
 					if (acquireJobResult.m_Job != nullptr)
 					{
-						acquireJobResult.m_Job->Execute(
+						acquireJobResult.m_Job->Execute_Internal(
 							acquireJobResult.m_JobContextIndex,
 							acquireJobResult.m_JobElementCount,
 							acquireJobResult.m_DesiredBatchSize,
@@ -94,7 +94,7 @@ namespace JobSystem
 
 			for (int32_t i = 0; i < m_ThreadsCount; i++)
 			{
-				auto context = new JobsThreadContext(i);
+				auto context = new ThreadContext(i);
 				m_ThreadContexts.push_back(context);
 				m_Threads.emplace_back(threadLoop, context, &m_BaseJobsQueue);
 			}
@@ -282,7 +282,7 @@ namespace JobSystem
 
 	private:
 		JobQueue m_BaseJobsQueue = {};
-		std::vector<JobsThreadContext*> m_ThreadContexts;
+		std::vector<ThreadContext*> m_ThreadContexts;
 		std::vector<std::thread> m_Threads;
 		int32_t m_ThreadsCount = 0;
 

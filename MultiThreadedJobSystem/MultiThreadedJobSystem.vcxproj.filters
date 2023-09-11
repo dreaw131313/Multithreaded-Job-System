@@ -32,7 +32,7 @@
     <ClInclude Include="src\JobSystem\JobQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\JobSystem\JobsThreadContext.h">
+    <ClInclude Include="src\JobSystem\ThreadContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utils\MeasureTimer.h">

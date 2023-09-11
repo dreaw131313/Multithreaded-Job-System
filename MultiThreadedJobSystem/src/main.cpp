@@ -18,7 +18,7 @@ using namespace JobSystem;
 class TestJob : public JobSystem::JobParallelForBatch
 {
 public:
-	virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count) override
+	virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count, const ThreadContext& threadContext) override
 	{
 		int value = 0;
 		for (int64_t i = 0; i < count; i++)
