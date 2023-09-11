@@ -10,7 +10,7 @@
 
 #include "Utils/MeasureTimer.h"
 
-#include "JobSystem/JobSystemManager.h"
+#include "JobSystem/JobSystem.h"
 
 using namespace std::chrono_literals;
 using namespace JobSystem;
@@ -73,6 +73,7 @@ int main(int argc, char** args)
 	//auto dependecy = jobSystemManager.Schedule(&job, 20);
 	//dependecy.Complete();
 
+	jobSystemManager.CompleteJobs();
 	jobSystemManager.Destroy();
 
 	return 0;

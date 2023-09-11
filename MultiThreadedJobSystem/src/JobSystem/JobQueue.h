@@ -1,8 +1,4 @@
 #pragma once
-#include <vector>
-#include <list>
-#include <mutex>
-
 #include "Job.h"
 #include "JobDependency.h"
 
@@ -107,11 +103,47 @@ namespace JobSystem
 		};
 
 	public:
-		JobQueue();
+		JobQueue()
+		{
 
-		~JobQueue();
+		}
 
-		JobRecordData GetRemoveJob();
+		~JobQueue()
+		{
+
+		}
+
+		JobRecordData GetRemoveJob()
+		{
+			std::unique_lock lock(m_Mutex);
+			if (m_JobCount > 0)
+			{
+				for (auto it = m_JobsRecord.begin(); it != m_JobsRecord.end(); it++)
+				{
+					JobQueueRecord& record = *it;
+
+					if (record.IsValidToStart())
+					{
+						JobQueue::JobRecordData recordData(
+							record.m_JobDependecyData,
+							record.m_Job,
+							(uint32_t)record.m_CurrentJobContext,
+							record.m_JobElementCount,
+							record.m_DesiredBatchSize
+						);
+						record.m_CurrentJobContext += 1;
+						if (record.m_CurrentJobContext >= record.m_JobContextCount)
+						{
+							m_JobsRecord.erase(it);
+							m_JobCount -= 1;
+						}
+						return recordData;
+					}
+				}
+			}
+
+			return JobQueue::JobRecordData();
+		}
 
 		bool AddJob(
 			JobBase* job,
@@ -120,11 +152,28 @@ namespace JobSystem
 			int64_t desiredBatchSize,
 			JobDependency* dependecies = nullptr,
 			uint64_t dependecyCount = 0
-		);
+		)
+		{
+			if (job == nullptr)
+			{
+				return false;
+			}
 
-		void Clear();
+			std::unique_lock lock(m_Mutex);
+			m_JobsRecord.emplace_back(job, jobDependecyData, jobElementCount, desiredBatchSize, dependecies, dependecyCount);
+			m_JobCount += 1;
 
-		inline uint32_t GetJobsCount()
+			return true;
+		}
+
+		void Clear()
+		{
+			std::unique_lock lock(m_Mutex);
+			m_JobsRecord.clear();
+			m_JobCount = 0;
+		}
+
+		inline uint32_t GetJobsCount() const
 		{
 			std::unique_lock lock(m_Mutex);
 			return m_JobCount;

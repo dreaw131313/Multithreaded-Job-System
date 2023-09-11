@@ -137,17 +137,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\JobSystem\Job.cpp" />
-    <ClCompile Include="src\JobSystem\JobDependency.cpp" />
-    <ClCompile Include="src\JobSystem\JobQueue.cpp" />
-    <ClCompile Include="src\JobSystem\JobSystemManager.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\JobSystem\Core.h" />
     <ClInclude Include="src\JobSystem\Job.h" />
     <ClInclude Include="src\JobSystem\JobDependency.h" />
     <ClInclude Include="src\JobSystem\JobQueue.h" />
     <ClInclude Include="src\JobSystem\JobsThreadContext.h" />
+    <ClInclude Include="src\JobSystem\JobSystem.h" />
     <ClInclude Include="src\JobSystem\JobSystemManager.h" />
     <ClInclude Include="src\Utils\MeasureTimer.h" />
   </ItemGroup>

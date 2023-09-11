@@ -1,5 +1,6 @@
 #pragma once
-#include <cstdint>
+#include "Core.h"
+
 #include "JobsThreadContext.h"
 
 namespace JobSystem
@@ -9,9 +10,15 @@ namespace JobSystem
 		friend class JobQueue;
 		friend class JobSystemManager;
 	public:
-		JobBase();
+		JobBase()
+		{
 
-		~JobBase();
+		}
+
+		~JobBase()
+		{
+
+		}
 
 		virtual void Execute(
 			int64_t jobContextIndex,
@@ -103,5 +110,4 @@ namespace JobSystem
 			Execute(jobContextIndex, startIndex, count);
 		}
 	};
-
 }

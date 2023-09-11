@@ -1,6 +1,5 @@
 #pragma once
-#include <cstdint>
-#include <mutex>
+#include "Core.h"
 
 namespace JobSystem
 {
@@ -40,10 +39,16 @@ namespace JobSystem
 		friend class JobSystemManager;
 
 	private:
-		JobDependency(std::shared_ptr<JobDependencyData>& dependcyData);
+		JobDependency(std::shared_ptr<JobDependencyData>& dependcyData) :
+			m_DependencyData(dependcyData)
+		{
+		}
 
 	public:
-		JobDependency();
+		JobDependency()
+		{
+
+		}
 
 		inline bool IsCompleted()
 		{
