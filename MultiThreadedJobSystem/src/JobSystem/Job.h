@@ -71,11 +71,12 @@ namespace JobSystem
 				return;
 			}
 
-			int64_t count = distanceToEnd >= desiredBatchSize ? desiredBatchSize : distanceToEnd;
+			int64_t iterationCount = distanceToEnd >= desiredBatchSize ? desiredBatchSize : distanceToEnd;
+			int64_t endIndex = startIndex + iterationCount;
 
-			for (int64_t index = 0; index < count; index++)
+			for (int64_t index = startIndex; index < endIndex; index++)
 			{
-				Execute(index, jobContextIndex, threadContext);
+				Execute(jobContextIndex, index, threadContext);
 			}
 		}
 	};
