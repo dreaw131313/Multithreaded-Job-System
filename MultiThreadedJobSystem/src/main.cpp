@@ -42,9 +42,9 @@ int main(int argc, char** args)
 	JobSystemManager jobSystemManager = {};
 	jobSystemManager.Initialize();
 
-	int64_t elementsCount = 100;
+	int64_t elementsCount = 1000000;
 
-	int threadsToUse = 11;
+	int threadsToUse = 12;
 	TestJob multiThreadJob = {};
 	multiThreadJob.values.resize(threadsToUse);
 

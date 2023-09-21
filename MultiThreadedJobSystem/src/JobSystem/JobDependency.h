@@ -3,10 +3,12 @@
 
 namespace JobSystem
 {
+	class JobSystemManager;
+
 	class JobDependencyData
 	{
 	public:
-		JobDependencyData(int jobContextCount = 1):
+		JobDependencyData(int jobContextCount = 1) :
 			m_ContextCount(jobContextCount)
 		{
 
@@ -39,10 +41,7 @@ namespace JobSystem
 		friend class JobSystemManager;
 
 	private:
-		JobDependency(std::shared_ptr<JobDependencyData>& dependcyData) :
-			m_DependencyData(dependcyData)
-		{
-		}
+		JobDependency(std::shared_ptr<JobDependencyData>& dependcyData, JobSystemManager* jobSystemManager);
 
 	public:
 		JobDependency()
@@ -59,7 +58,9 @@ namespace JobSystem
 			return true;
 		}
 
-		inline void Complete()
+		void Complete();
+
+		inline void CompleteWithoutPerformingJobs()
 		{
 			if (m_DependencyData)
 			{
@@ -69,5 +70,7 @@ namespace JobSystem
 
 	private:
 		std::shared_ptr<JobDependencyData> m_DependencyData;
+
+		JobSystemManager* m_JobSystemManager = nullptr;
 	};
 }

@@ -7,15 +7,20 @@ namespace JobSystem
 	{
 		friend class JobSystemManager;
 	public:
-		ThreadContext(uint32_t threadID) :
-			m_ThreadID(threadID)
+		ThreadContext(uint32_t threadIndex) :
+			m_ThreadIndex(threadIndex)
 		{
 
 		}
 
+		inline uint32_t GetThreadIndex() const
+		{
+			return m_ThreadIndex;
+		}
+
 		inline uint32_t GetThreadID() const
 		{
-			return m_ThreadID;
+			return m_ThreadIndex;
 		}
 
 		inline bool IsAlive() const
@@ -31,13 +36,14 @@ namespace JobSystem
 		}
 
 	private:
-		bool m_IsAlive = true;
-		uint32_t m_ThreadID;
 
 		mutable std::mutex m_Mutex = {};
 		std::condition_variable m_ConditionVariable = {};
+		uint64_t m_ThreadID = 0;
 		uint32_t m_IsAwake = 0;
+		uint32_t m_ThreadIndex;
 
+		bool m_IsAlive = true;
 	private:
 		inline void Kill()
 		{
@@ -61,6 +67,5 @@ namespace JobSystem
 			}
 			m_IsAwake -= 1;
 		}
-
 	};
 }
