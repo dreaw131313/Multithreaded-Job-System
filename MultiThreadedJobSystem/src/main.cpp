@@ -21,13 +21,10 @@ public:
 	virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count, const ThreadContext& threadContext) override
 	{
 		int64_t value = values[batchIndex];
-		for (int64_t i = 0; i < count * 2; i++)
+		for (int64_t i = 0; i < count; i++)
 		{
-			value += (value * 2) % (batchIndex + 2);
+			value += 1;
 		}
-		//std::this_thread::sleep_for(std::chrono::milliseconds(2));
-		//std::cout << "Value: " << value << std::endl;
-
 		values[batchIndex] = value;
 	}
 
@@ -42,18 +39,13 @@ int main(int argc, char** args)
 	JobSystem::JobManagerConfig config{};
 	JobManager jobSystem(config);
 
-	int64_t elementsCount = 10000000;
+	int64_t elementsCount = 1000000;
 
-	int threadsToUse = 20;
+	int threadsToUse = 10;
 	TestJob multiThreadJob = {};
 	multiThreadJob.values.resize(threadsToUse);
 
-	TestJob singleThreadJob = {};
-	singleThreadJob.values.resize(1);
-
 	int schedules = 100;
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	MeasureTimer timer(true);
 	{
@@ -65,6 +57,20 @@ int main(int argc, char** args)
 	}
 	auto multiThreadDelta = timer.ElapsedAsMilisecond();
 
+	int64_t value = 0;
+	for (int i = 0; i < threadsToUse; i++)
+	{
+		value += multiThreadJob.values[i];
+	}
+
+	std::cout << "Multi thread schedule avarage time: " << multiThreadDelta / schedules << " ms" << std::endl;
+	std::cout << "Final value multi thread = " << value << std::endl;
+
+	/*
+
+	TestJob singleThreadJob = {};
+	singleThreadJob.values.resize(1);
+
 	timer.Start();
 	{
 		for (int i = 0; i < schedules; i++)
@@ -75,18 +81,9 @@ int main(int argc, char** args)
 	}
 	auto singleThreadDelta = timer.ElapsedAsMilisecond();
 
-
-	int64_t value = 0;
-	for (int i = 0; i < threadsToUse; i++)
-	{
-		value += multiThreadJob.values[i];
-	}
-
-	std::cout << "Multi thread schedule avarage time: " << multiThreadDelta / schedules << " ms" << std::endl;
-	std::cout << "Single thread schedules avarage time: " << singleThreadDelta / schedules << " ms" << std::endl;
-
-	std::cout << "Final value multi thread = " << value << std::endl;
 	std::cout << "Final value single thread = " << singleThreadJob.values[0] << std::endl;
+	std::cout << "Single thread schedules avarage time: " << singleThreadDelta / schedules << " ms" << std::endl;
+	*/
 
 	//auto dependecy = jobSystemManager.Schedule(&job, 20);
 	//dependecy.Complete();

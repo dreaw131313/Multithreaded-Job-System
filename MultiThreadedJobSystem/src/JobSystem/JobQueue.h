@@ -187,13 +187,13 @@ namespace JobSystem
 
 		bool DequeueJob(JobDequeueResult& result)
 		{
-			std::unique_lock lock(m_Mutex);
+			std::scoped_lock lock(m_Mutex);
 			return DequeueJob_Internal(result);
 		}
 
 		bool DequeueJob(JobDequeueResult& result, uint64_t& jobCount)
 		{
-			std::unique_lock lock(m_Mutex);
+			std::scoped_lock lock(m_Mutex);
 			jobCount = m_JobCount;
 			return DequeueJob_Internal(result);
 		}
@@ -245,7 +245,7 @@ namespace JobSystem
 
 		void Clear()
 		{
-			std::unique_lock lock(m_Mutex);
+			std::scoped_lock lock(m_Mutex);
 			m_JobCount = 0;
 
 			m_Front = nullptr;
@@ -257,7 +257,7 @@ namespace JobSystem
 
 		inline uint32_t GetJobsCount() const
 		{
-			std::unique_lock lock(m_Mutex);
+			std::scoped_lock lock(m_Mutex);
 			return m_JobCount;
 		}
 

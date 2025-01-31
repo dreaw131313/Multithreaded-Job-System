@@ -25,13 +25,13 @@ namespace JobSystem
 
 		inline bool IsAlive() const
 		{
-			std::unique_lock lock(m_Mutex);
+			std::scoped_lock lock(m_Mutex);
 			return m_IsAlive;
 		}
 
 		inline bool IsAwake()
 		{
-			std::unique_lock lock(m_Mutex);
+			std::scoped_lock lock(m_Mutex);
 			return m_IsAwake > 0;
 		}
 
@@ -47,13 +47,13 @@ namespace JobSystem
 	private:
 		inline void Kill()
 		{
-			std::unique_lock lock(m_Mutex);
+			std::scoped_lock lock(m_Mutex);
 			m_IsAlive = false;
 		}
 
 		inline void WakeUp()
 		{
-			std::unique_lock lock(m_Mutex);
+			std::scoped_lock lock(m_Mutex);
 			m_IsAwake += 1;
 			m_ConditionVariable.notify_one();
 		}
