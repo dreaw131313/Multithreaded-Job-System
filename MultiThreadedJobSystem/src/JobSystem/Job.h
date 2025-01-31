@@ -59,14 +59,9 @@ namespace JobSystem
 			const ThreadContext& threadContext
 		) final
 		{
-			if (jobElementCount <= 0 || desiredBatchSize <= 0)
-			{
-				return;
-			}
-
 			int64_t startIndex = jobContextIndex * desiredBatchSize;
 			int64_t distanceToEnd = jobElementCount - startIndex;
-			if (distanceToEnd < 0)
+			if (distanceToEnd <= 0)
 			{
 				return;
 			}
@@ -94,14 +89,9 @@ namespace JobSystem
 			const ThreadContext& threadContext
 		) final
 		{
-			if (jobElementCount <= 0 || desiredBatchSize <= 0)
-			{
-				return;
-			}
-
 			int64_t startIndex = jobContextIndex * desiredBatchSize;
 			int64_t distanceToEnd = jobElementCount - startIndex;
-			if (distanceToEnd < 0)
+			if (distanceToEnd <= 0)
 			{
 				return;
 			}
