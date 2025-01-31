@@ -8,25 +8,30 @@
 
 namespace JobSystem
 {
-	class JobSystemManager
+	struct JobManagerConfig
 	{
 	public:
-		JobSystemManager();
+		int m_WorkerThreadCount = -1;
 
-		JobSystemManager(int32_t maxWorkerThreads);
+	};
 
-		~JobSystemManager();
+	class JobManager
+	{
+	public:
+		JobManager();
+
+		JobManager(const JobManagerConfig& config);
+
+		~JobManager();
 
 		inline uint32_t GetWorkerThreadsCount() const
 		{
 			return m_WorkerThreadsCount;
 		}
 
-		void Initialize(int32_t maxWorkerThreads = 0);
+		void Initialize(const JobManagerConfig& config);
 
 		void Destroy();
-
-		void Reinitialize(int32_t maxWorkerThreads = 0);
 
 		void CompleteJobs();
 

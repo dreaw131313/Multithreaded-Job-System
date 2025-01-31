@@ -5,7 +5,7 @@ namespace JobSystem
 {
 	class ThreadContext
 	{
-		friend class JobSystemManager;
+		friend class JobManager;
 	public:
 		ThreadContext(uint32_t threadIndex) :
 			m_ThreadIndex(threadIndex)

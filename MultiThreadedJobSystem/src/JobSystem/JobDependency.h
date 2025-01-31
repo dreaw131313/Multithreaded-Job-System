@@ -3,7 +3,7 @@
 
 namespace JobSystem
 {
-	class JobSystemManager;
+	class JobManager;
 
 	class JobDependencyData
 	{
@@ -35,10 +35,10 @@ namespace JobSystem
 
 	class JobDependency
 	{
-		friend class JobSystemManager;
+		friend class JobManager;
 
 	private:
-		JobDependency(std::shared_ptr<JobDependencyData>& dependcyData, JobSystemManager* jobSystemManager);
+		JobDependency(std::shared_ptr<JobDependencyData>& dependcyData, JobManager* jobManager);
 
 	public:
 		JobDependency()
@@ -68,6 +68,6 @@ namespace JobSystem
 	private:
 		std::shared_ptr<JobDependencyData> m_DependencyData;
 
-		JobSystemManager* m_JobSystemManager = nullptr;
+		JobManager* m_JobManager = nullptr;
 	};
 }

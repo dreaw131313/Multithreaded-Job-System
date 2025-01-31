@@ -18,7 +18,7 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\JobSystem\JobSystemManager.cpp">
+    <ClCompile Include="src\JobSystem\JobManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\JobSystem\JobDependency.cpp">
@@ -26,7 +26,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\JobSystem\JobSystemManager.h">
+    <ClInclude Include="src\JobSystem\JobManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\JobSystem\Job.h">

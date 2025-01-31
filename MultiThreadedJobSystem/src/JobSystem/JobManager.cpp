@@ -1,40 +1,41 @@
-#include "JobSystemManager.h"
+#include "JobManager.h"
 
 namespace JobSystem
 {
-	JobSystemManager::JobSystemManager()
+	JobManager::JobManager()
 	{
-		Initialize();
+		Initialize({});
 	}
 
-	JobSystemManager::JobSystemManager(int32_t maxWorkerThreads)
+	JobManager::JobManager(const JobManagerConfig& config)
 	{
-		Initialize(maxWorkerThreads);
+		Initialize(config);
 	}
 
-	JobSystemManager::~JobSystemManager()
+	JobManager::~JobManager()
 	{
 		Destroy();
 	}
 
-	void JobSystemManager::Initialize(int32_t maxWorkerThreads)
+	void JobManager::Initialize(const JobManagerConfig& configuration)
 	{
+		Destroy();
+
 		if (m_bIsInitialized)
 		{
 			return;
 		}
 		m_bIsInitialized = true;
 
-		int workerThreadCount = std::thread::hardware_concurrency() - 1;
+		int workerThreadCount = std::thread::hardware_concurrency() - 2;
 		if (workerThreadCount <= 0)
 		{
-			//LOG_WARN("Failed to initialize threads in JobSystemManagerInstance, function \"std::thread::hardware_concurrency()\" returns value \"0\"");
 			return;
 		}
 
-		if (maxWorkerThreads > 0)
+		if (configuration.m_WorkerThreadCount > 0)
 		{
-			m_WorkerThreadsCount = std::min(workerThreadCount, maxWorkerThreads);
+			m_WorkerThreadsCount = std::min(workerThreadCount, configuration.m_WorkerThreadCount);
 		}
 		else
 		{
@@ -50,39 +51,32 @@ namespace JobSystem
 
 			context->m_ThreadID = std::hash<std::thread::id>()(std::this_thread::get_id());
 
-			JobThreadData acquireJobResult = {};
-			uint64_t jobCount = 0;
+			JobDequeueResult dequeueJobResult = {};
+			uint64_t remainingJobs = 0;
 
 			while (context->IsAlive())
 			{
-				// get job from queue and remove from it
-				uint64_t jobCount = 0;
-				acquireJobResult = jobQueue->GetRemoveJob(jobCount);
-
-				// after wake up skip couse job is still nullptr
-				// after getting job execute and complete it and reset acquire job result
-				if (acquireJobResult.m_Job != nullptr)
+				if (jobQueue->DequeueJob(dequeueJobResult, remainingJobs))
 				{
-					acquireJobResult.m_Job->Execute_Internal(
-						acquireJobResult.m_JobContextIndex,
-						acquireJobResult.m_JobElementCount,
-						acquireJobResult.m_DesiredBatchSize,
+					dequeueJobResult.m_Job->Execute_Internal(
+						dequeueJobResult.m_JobContextIndex,
+						dequeueJobResult.m_JobElementCount,
+						dequeueJobResult.m_DesiredBatchSize,
 						*context
 					);
-					acquireJobResult.m_JobDependecy->SetCompleted();
-					acquireJobResult.Reset();
+					dequeueJobResult.m_JobDependecy->SetCompleted();
 				}
 
 				// if no job in queue then sleep:
-				if (jobCount == 0)
+				if (remainingJobs == 0)
 				{
 					context->Sleep();
 				}
-
 			}
 		};
 
-		for (int32_t i = 0; i < m_WorkerThreadsCount; i++)
+		m_MainThreadContext = new ThreadContext(0);
+		for (int32_t i = 1; i <= m_WorkerThreadsCount; i++)
 		{
 			auto context = new ThreadContext(i);
 			m_WorkerThreadContexts.push_back(context);
@@ -90,10 +84,9 @@ namespace JobSystem
 			auto& thread = m_WorkerThreads.emplace_back(threadLoop, context, &m_BaseJobsQueue);
 		}
 
-		m_MainThreadContext = new ThreadContext(m_WorkerThreadsCount);
 	}
 
-	void JobSystemManager::Destroy()
+	void JobManager::Destroy()
 	{
 		if (!m_bIsInitialized)
 		{
@@ -130,15 +123,12 @@ namespace JobSystem
 		m_BaseJobsQueue.Clear();
 	}
 
-	void JobSystemManager::Reinitialize(int32_t maxWorkerThreads)
+	void JobManager::CompleteJobs()
 	{
-		Destroy();
-		Initialize(maxWorkerThreads);
-	}
-
-	void JobSystemManager::CompleteJobs()
-	{
-		while (m_BaseJobsQueue.GetJobsCount() > 0);
+		while (m_BaseJobsQueue.GetJobsCount() > 0)
+		{
+			PerformJobsOnMainThread();
+		}
 
 		int32_t sleepingthreads = 0;
 		while (sleepingthreads != m_WorkerThreadsCount)
@@ -154,7 +144,7 @@ namespace JobSystem
 		}
 	}
 
-	void JobSystemManager::WakeupThreads(int32_t threadsToWakeUp)
+	void JobManager::WakeupThreads(int32_t threadsToWakeUp)
 	{
 		int32_t maxThreads = std::max(threadsToWakeUp, m_WorkerThreadsCount);
 		for (int32_t i = 0; i < maxThreads; i++)
@@ -164,7 +154,7 @@ namespace JobSystem
 		}
 	}
 
-	JobDependency JobSystemManager::Schedule(
+	JobDependency JobManager::Schedule(
 		JobBase* job,
 		int64_t jobContextCount,
 		int64_t jobElementCount,
@@ -176,7 +166,7 @@ namespace JobSystem
 		if (job != nullptr && jobContextCount > 0)
 		{
 			std::shared_ptr<JobDependencyData> jobDependecyData = std::make_shared<JobDependencyData>((int)jobContextCount);
-			m_BaseJobsQueue.AddJob(
+			m_BaseJobsQueue.QueueJob(
 				job,
 				jobDependecyData,
 				jobContextCount,
@@ -195,12 +185,12 @@ namespace JobSystem
 		return JobDependency();
 	}
 
-	JobDependency JobSystemManager::Schedule(Job* job, JobDependency* dependecies, uint64_t dependecyCount)
+	JobDependency JobManager::Schedule(Job* job, JobDependency* dependecies, uint64_t dependecyCount)
 	{
 		return Schedule(job, 1, -1, -1, dependecies, dependecyCount);
 	}
 
-	JobDependency JobSystemManager::ScheduleParallelFor(JobParallelFor* job, int64_t elementCount, int64_t batchSize, JobDependency* dependecies, uint64_t dependecyCount)
+	JobDependency JobManager::ScheduleParallelFor(JobParallelFor* job, int64_t elementCount, int64_t batchSize, JobDependency* dependecies, uint64_t dependecyCount)
 	{
 		if (elementCount > 0 && batchSize > 0)
 		{
@@ -217,7 +207,7 @@ namespace JobSystem
 		return JobDependency();
 	}
 
-	JobDependency JobSystemManager::ScheduleParallelForBatch(JobParallelForBatch* job, int64_t elementCount, int64_t maxBatchSize, JobDependency* dependecies, uint64_t dependecyCount)
+	JobDependency JobManager::ScheduleParallelForBatch(JobParallelForBatch* job, int64_t elementCount, int64_t maxBatchSize, JobDependency* dependecies, uint64_t dependecyCount)
 	{
 		if (elementCount > 0 && maxBatchSize > 0)
 		{
@@ -239,7 +229,7 @@ namespace JobSystem
 		return JobDependency();
 	}
 
-	JobDependency JobSystemManager::ScheduleParallelForBatch2(JobParallelForBatch* job, int64_t elementCount, int64_t maxBatches, JobDependency* dependecies, uint64_t dependecyCount)
+	JobDependency JobManager::ScheduleParallelForBatch2(JobParallelForBatch* job, int64_t elementCount, int64_t maxBatches, JobDependency* dependecies, uint64_t dependecyCount)
 	{
 		if (elementCount > 0 && maxBatches > 0)
 		{
@@ -275,19 +265,13 @@ namespace JobSystem
 		return JobDependency();
 	}
 
-	void JobSystemManager::PerformJobsOnMainThread()
+	void JobManager::PerformJobsOnMainThread()
 	{
-		JobThreadData acquireJobResult = {};
-		uint64_t jobCount = 0;
+		JobDequeueResult acquireJobResult = {};
 
 		while (m_BaseJobsQueue.GetJobsCount() == 0)
 		{
-			// get job from queue and remove from it
-			acquireJobResult = m_BaseJobsQueue.GetRemoveJob(jobCount);
-
-			// after wake up skip couse job is still nullptr
-			// after getting job execute and complete it and reset acquire job result
-			if (acquireJobResult.m_Job != nullptr)
+			if (m_BaseJobsQueue.DequeueJob(acquireJobResult))
 			{
 				acquireJobResult.m_Job->Execute_Internal(
 					acquireJobResult.m_JobContextIndex,
@@ -296,24 +280,22 @@ namespace JobSystem
 					*m_MainThreadContext
 				);
 				acquireJobResult.m_JobDependecy->SetCompleted();
-				acquireJobResult.Reset();
 			}
 		}
 	}
 
-	void JobSystemManager::PerformJobsOnMainThreadUntilDepenedcyCompleted(JobDependency& dependecy)
+	void JobManager::PerformJobsOnMainThreadUntilDepenedcyCompleted(JobDependency& dependecy)
 	{
-		JobThreadData acquireJobResult = {};
-		uint64_t jobCount = 0;
+		JobDequeueResult acquireJobResult = {};
 
 		while (!dependecy.IsCompleted())
 		{
-			// get job from queue and remove from it
-			acquireJobResult = m_BaseJobsQueue.GetRemoveJob(jobCount);
+			if (dependecy.IsCompleted())
+			{
+				break;
+			}
 
-			// after wake up skip couse job is still nullptr
-			// after getting job execute and complete it and reset acquire job result
-			if (acquireJobResult.m_Job != nullptr)
+			if (m_BaseJobsQueue.DequeueJob(acquireJobResult))
 			{
 				acquireJobResult.m_Job->Execute_Internal(
 					acquireJobResult.m_JobContextIndex,
@@ -322,7 +304,6 @@ namespace JobSystem
 					*m_MainThreadContext
 				);
 				acquireJobResult.m_JobDependecy->SetCompleted();
-				acquireJobResult.Reset();
 			}
 		}
 	}

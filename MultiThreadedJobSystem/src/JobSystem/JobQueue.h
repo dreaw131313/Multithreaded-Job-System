@@ -95,7 +95,7 @@ namespace JobSystem
 
 	};
 
-	class JobThreadData
+	class JobDequeueResult
 	{
 	public:
 		std::shared_ptr<JobDependencyData> m_JobDependecy = {};
@@ -105,12 +105,12 @@ namespace JobSystem
 		int64_t m_DesiredBatchSize = -1;
 
 	public:
-		JobThreadData()
+		JobDequeueResult()
 		{
 
 		}
 
-		JobThreadData(
+		JobDequeueResult(
 			const std::shared_ptr<JobDependencyData>& jobDependecy,
 			JobBase* job,
 			int64_t jobContextIndex,
@@ -133,6 +133,7 @@ namespace JobSystem
 			m_JobContextIndex = std::numeric_limits<uint32_t>::max();
 		}
 	};
+
 	class JobQueue
 	{
 		struct Node final
@@ -184,39 +185,20 @@ namespace JobSystem
 
 		}
 
-		JobThreadData GetRemoveJob(uint64_t& jobCount)
+		bool DequeueJob(JobDequeueResult& result)
+		{
+			std::unique_lock lock(m_Mutex);
+			return DequeueJob_Internal(result);
+		}
+
+		bool DequeueJob(JobDequeueResult& result, uint64_t& jobCount)
 		{
 			std::unique_lock lock(m_Mutex);
 			jobCount = m_JobCount;
-			if (m_JobCount > 0)
-			{
-				Node* nodeWithJob = GetFirstNodeWithJobToStart();
-				if (nodeWithJob != nullptr)
-				{
-					JobQueueData& jobData = nodeWithJob->m_JobData;
-
-					JobThreadData jobThreadData(
-						jobData.m_JobDependecyData,
-						jobData.m_Job,
-						(uint32_t)jobData.m_CurrentJobContext,
-						jobData.m_JobElementCount,
-						jobData.m_DesiredBatchSize
-					);
-
-					jobData.m_CurrentJobContext++;
-
-					if (jobData.m_CurrentJobContext >= jobData.m_JobContextCount)
-					{
-						EraseNodeFromLinkedList(nodeWithJob);
-					}
-					return jobThreadData;
-				}
-			}
-
-			return JobThreadData();
+			return DequeueJob_Internal(result);
 		}
 
-		bool AddJob(
+		bool QueueJob(
 			JobBase* job,
 			std::shared_ptr<JobDependencyData>& jobDependecyData,
 			int64_t jobContextCount,
@@ -372,6 +354,36 @@ namespace JobSystem
 			}
 
 			m_JobCount--;
+		}
+
+		bool DequeueJob_Internal(JobDequeueResult& result)
+		{
+			if (m_JobCount > 0)
+			{
+				Node* nodeWithJob = GetFirstNodeWithJobToStart();
+				if (nodeWithJob != nullptr)
+				{
+					JobQueueData& jobData = nodeWithJob->m_JobData;
+					// Fill result:
+					{
+						result.m_JobDependecy = jobData.m_JobDependecyData;
+						result.m_Job = jobData.m_Job;
+						result.m_JobContextIndex = jobData.m_CurrentJobContext;
+						result.m_JobElementCount = jobData.m_JobElementCount;
+						result.m_DesiredBatchSize = jobData.m_DesiredBatchSize;
+					}
+
+					jobData.m_CurrentJobContext++;
+					if (jobData.m_CurrentJobContext >= jobData.m_JobContextCount)
+					{
+						EraseNodeFromLinkedList(nodeWithJob);
+					}
+
+					return true;
+				}
+			}
+
+			return false;
 		}
 	};
 }

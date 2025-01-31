@@ -1,20 +1,20 @@
 #include "JobDependency.h"
 
-#include "JobSystemManager.h"
+#include "JobManager.h"
 
 namespace JobSystem
 {
-	JobDependency::JobDependency(std::shared_ptr<JobDependencyData>& dependcyData, JobSystemManager* jobSystemManager) :
+	JobDependency::JobDependency(std::shared_ptr<JobDependencyData>& dependcyData, JobManager* jobManager) :
 		m_DependencyData(dependcyData),
-		m_JobSystemManager(jobSystemManager)
+		m_JobManager(jobManager)
 	{
 	}
 
 	void JobDependency::Complete()
 	{
-		if (m_JobSystemManager != nullptr)
+		if (m_JobManager != nullptr)
 		{
-			m_JobSystemManager->PerformJobsOnMainThreadUntilDepenedcyCompleted(*this);
+			m_JobManager->PerformJobsOnMainThreadUntilDepenedcyCompleted(*this);
 		}
 	}
 }

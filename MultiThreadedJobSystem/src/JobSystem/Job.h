@@ -8,7 +8,7 @@ namespace JobSystem
 	class JobBase
 	{
 		friend class JobQueue;
-		friend class JobSystemManager;
+		friend class JobManager;
 	public:
 		JobBase()
 		{
@@ -47,7 +47,7 @@ namespace JobSystem
 
 	class JobParallelFor : public JobBase
 	{
-		friend class JobSystemManager;
+		friend class JobManager;
 	public:
 		virtual void Execute(int64_t batchIndex, int64_t index, const ThreadContext& threadContext) = 0;
 

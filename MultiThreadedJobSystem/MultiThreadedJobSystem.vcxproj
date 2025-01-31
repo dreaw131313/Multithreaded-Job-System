@@ -138,7 +138,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\JobSystem\JobDependency.cpp" />
-    <ClCompile Include="src\JobSystem\JobSystemManager.cpp" />
+    <ClCompile Include="src\JobSystem\JobManager.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -148,7 +148,7 @@
     <ClInclude Include="src\JobSystem\JobQueue.h" />
     <ClInclude Include="src\JobSystem\JobSystem.h" />
     <ClInclude Include="src\JobSystem\ThreadContext.h" />
-    <ClInclude Include="src\JobSystem\JobSystemManager.h" />
+    <ClInclude Include="src\JobSystem\JobManager.h" />
     <ClInclude Include="src\Utils\MeasureTimer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

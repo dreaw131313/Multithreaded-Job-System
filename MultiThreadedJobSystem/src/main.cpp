@@ -21,9 +21,9 @@ public:
 	virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count, const ThreadContext& threadContext) override
 	{
 		int64_t value = values[batchIndex];
-		for (int64_t i = 0; i < count; i++)
+		for (int64_t i = 0; i < count * 2; i++)
 		{
-			value += value + 1 % 8;
+			value += (value * 2) % (batchIndex + 2);
 		}
 		//std::this_thread::sleep_for(std::chrono::milliseconds(2));
 		//std::cout << "Value: " << value << std::endl;
@@ -39,19 +39,19 @@ public:
 
 int main(int argc, char** args)
 {
-	JobSystemManager jobSystemManager = {};
-	jobSystemManager.Initialize();
+	JobSystem::JobManagerConfig config{};
+	JobManager jobSystem(config);
 
-	int64_t elementsCount = 100000000;
+	int64_t elementsCount = 10000000;
 
-	int threadsToUse = 16;
+	int threadsToUse = 20;
 	TestJob multiThreadJob = {};
 	multiThreadJob.values.resize(threadsToUse);
 
 	TestJob singleThreadJob = {};
 	singleThreadJob.values.resize(1);
 
-	int schedules = 1000;
+	int schedules = 100;
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -59,7 +59,7 @@ int main(int argc, char** args)
 	{
 		for (int i = 0; i < schedules; i++)
 		{
-			auto dependecy = jobSystemManager.ScheduleParallelForBatch2(&multiThreadJob, elementsCount, threadsToUse);
+			auto dependecy = jobSystem.ScheduleParallelForBatch2(&multiThreadJob, elementsCount, threadsToUse);
 			dependecy.Complete();
 		}
 	}
@@ -69,7 +69,7 @@ int main(int argc, char** args)
 	{
 		for (int i = 0; i < schedules; i++)
 		{
-			auto dependecy = jobSystemManager.ScheduleParallelForBatch2(&singleThreadJob, elementsCount, 1);
+			auto dependecy = jobSystem.ScheduleParallelForBatch2(&singleThreadJob, elementsCount, 1);
 			dependecy.Complete();
 		}
 	}
@@ -91,8 +91,8 @@ int main(int argc, char** args)
 	//auto dependecy = jobSystemManager.Schedule(&job, 20);
 	//dependecy.Complete();
 
-	jobSystemManager.CompleteJobs();
-	jobSystemManager.Destroy();
+	jobSystem.CompleteJobs();
+	jobSystem.Destroy();
 
 	return 0;
 }
