@@ -50,18 +50,14 @@ namespace JobSystem
 
 			context->m_ThreadID = std::hash<std::thread::id>()(std::this_thread::get_id());
 
-			JobQueue::JobRecordData acquireJobResult = {};
+			JobThreadData acquireJobResult = {};
+			uint64_t jobCount = 0;
 
 			while (context->IsAlive())
 			{
 				// get job from queue and remove from it
-				acquireJobResult = jobQueue->GetRemoveJob();
-
-				// if no job in queue then sleep:
-				if (acquireJobResult.m_Job == nullptr)
-				{
-					context->Sleep();
-				}
+				uint64_t jobCount = 0;
+				acquireJobResult = jobQueue->GetRemoveJob(jobCount);
 
 				// after wake up skip couse job is still nullptr
 				// after getting job execute and complete it and reset acquire job result
@@ -76,6 +72,13 @@ namespace JobSystem
 					acquireJobResult.m_JobDependecy->SetCompleted();
 					acquireJobResult.Reset();
 				}
+
+				// if no job in queue then sleep:
+				if (jobCount == 0)
+				{
+					context->Sleep();
+				}
+
 			}
 		};
 
@@ -176,6 +179,7 @@ namespace JobSystem
 			m_BaseJobsQueue.AddJob(
 				job,
 				jobDependecyData,
+				jobContextCount,
 				jobElementCount,
 				desiredBatchSize,
 				dependecies,
@@ -273,12 +277,13 @@ namespace JobSystem
 
 	void JobSystemManager::PerformJobsOnMainThread()
 	{
-		JobQueue::JobRecordData acquireJobResult = {};
+		JobThreadData acquireJobResult = {};
+		uint64_t jobCount = 0;
 
 		while (m_BaseJobsQueue.GetJobsCount() == 0)
 		{
 			// get job from queue and remove from it
-			acquireJobResult = m_BaseJobsQueue.GetRemoveJob();
+			acquireJobResult = m_BaseJobsQueue.GetRemoveJob(jobCount);
 
 			// after wake up skip couse job is still nullptr
 			// after getting job execute and complete it and reset acquire job result
@@ -298,12 +303,13 @@ namespace JobSystem
 
 	void JobSystemManager::PerformJobsOnMainThreadUntilDepenedcyCompleted(JobDependency& dependecy)
 	{
-		JobQueue::JobRecordData acquireJobResult = {};
+		JobThreadData acquireJobResult = {};
+		uint64_t jobCount = 0;
 
 		while (!dependecy.IsCompleted())
 		{
 			// get job from queue and remove from it
-			acquireJobResult = m_BaseJobsQueue.GetRemoveJob();
+			acquireJobResult = m_BaseJobsQueue.GetRemoveJob(jobCount);
 
 			// after wake up skip couse job is still nullptr
 			// after getting job execute and complete it and reset acquire job result

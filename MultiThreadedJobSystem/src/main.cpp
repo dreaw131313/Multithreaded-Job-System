@@ -20,10 +20,10 @@ class TestJob : public JobSystem::JobParallelForBatch
 public:
 	virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count, const ThreadContext& threadContext) override
 	{
-		int64_t value = 0;
+		int64_t value = values[batchIndex];
 		for (int64_t i = 0; i < count; i++)
 		{
-			value += (value + 1) % 8;
+			value += value + 1 % 8;
 		}
 		//std::this_thread::sleep_for(std::chrono::milliseconds(2));
 		//std::cout << "Value: " << value << std::endl;
@@ -42,9 +42,9 @@ int main(int argc, char** args)
 	JobSystemManager jobSystemManager = {};
 	jobSystemManager.Initialize();
 
-	int64_t elementsCount = 1000000;
+	int64_t elementsCount = 100000000;
 
-	int threadsToUse = 12;
+	int threadsToUse = 16;
 	TestJob multiThreadJob = {};
 	multiThreadJob.values.resize(threadsToUse);
 
