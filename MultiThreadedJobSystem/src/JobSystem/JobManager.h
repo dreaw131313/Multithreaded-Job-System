@@ -14,13 +14,12 @@ namespace JobSystem
 		int m_WorkerThreadCount = -1;
 
 	};
-
 	class JobManager
 	{
 	public:
 		JobManager();
 
-		JobManager(const JobManagerConfig& config);
+		JobManager(const JobManagerConfig& configuration);
 
 		~JobManager();
 
@@ -29,7 +28,17 @@ namespace JobSystem
 			return m_WorkerThreadsCount;
 		}
 
-		void Initialize(const JobManagerConfig& config);
+		inline std::thread::id GetThreadID(int32_t threadIndex) const
+		{
+			if (threadIndex < m_WorkerThreadsCount)
+			{
+				return m_WorkerThreads[threadIndex].get_id();
+			}
+
+			return  {};
+		}
+
+		void Initialize(const JobManagerConfig& configuration);
 
 		void Destroy();
 
@@ -86,7 +95,7 @@ namespace JobSystem
 			uint64_t dependecyCount = 0
 		);
 
-		// Performs job until jobs queues are empty.
+		// Performs jobs until jobs queues are empty.
 		void PerformJobsOnMainThread();
 
 		// Perform jobs until jobs on dependecy is completed

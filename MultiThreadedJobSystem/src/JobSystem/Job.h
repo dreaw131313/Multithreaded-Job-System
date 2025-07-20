@@ -15,7 +15,7 @@ namespace JobSystem
 
 		}
 
-		~JobBase()
+		virtual ~JobBase()
 		{
 
 		}

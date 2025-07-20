@@ -3,8 +3,6 @@
 
 namespace JobSystem
 {
-	class JobManager;
-
 	class JobDependencyData
 	{
 	public:
@@ -45,6 +43,10 @@ namespace JobSystem
 		{
 
 		}
+		~JobDependency()
+		{
+			m_DependencyData.reset();
+		}
 
 		inline bool IsCompleted()
 		{
@@ -57,6 +59,9 @@ namespace JobSystem
 
 		void Complete();
 
+		/// <summary>
+		/// This waits for job to complete but will not perform jobs on waiting thread.
+		/// </summary>
 		inline void CompleteWithoutPerformingJobs()
 		{
 			if (m_DependencyData)
@@ -67,7 +72,6 @@ namespace JobSystem
 
 	private:
 		std::shared_ptr<JobDependencyData> m_DependencyData;
-
 		JobManager* m_JobManager = nullptr;
 	};
 }

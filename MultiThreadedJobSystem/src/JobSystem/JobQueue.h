@@ -43,14 +43,11 @@ namespace JobSystem
 			}
 		}
 
-
-		inline bool IsValidToStart()
+		bool IsValidToStart()
 		{
-			int64_t size = (int64_t)m_Dependecies.size();
-
-			for (int64_t i = size - 1; i >= 0; i--)
+			while (!m_Dependecies.empty())
 			{
-				auto& dependecy = m_Dependecies[i];
+				auto& dependecy = m_Dependecies.back();
 				if (dependecy.IsCompleted())
 				{
 					m_Dependecies.pop_back();
@@ -333,6 +330,9 @@ namespace JobSystem
 			Node* previous = node->m_Previous;
 			Node* next = node->m_Next;
 
+			node->m_Previous = nullptr;
+			node->m_Next = nullptr;
+
 			if (previous != nullptr)
 			{
 				previous->m_Next = next;
@@ -345,15 +345,13 @@ namespace JobSystem
 
 			if (m_Front == node)
 			{
-				m_Front = node->m_Next;
+				m_Front = next;
 			}
 
 			if (m_Back == node)
 			{
-				m_Back = node->m_Previous;
+				m_Back = previous;
 			}
-
-			m_JobCount--;
 		}
 
 		bool DequeueJob_Internal(JobDequeueResult& result)
@@ -377,6 +375,8 @@ namespace JobSystem
 					if (jobData.m_CurrentJobContext >= jobData.m_JobContextCount)
 					{
 						EraseNodeFromLinkedList(nodeWithJob);
+						DestroyNode(nodeWithJob);
+						m_JobCount--;
 					}
 
 					return true;

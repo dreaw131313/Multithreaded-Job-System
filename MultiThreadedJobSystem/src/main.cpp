@@ -66,7 +66,7 @@ int main(int argc, char** args)
 	std::cout << "Multi thread schedule avarage time: " << multiThreadDelta / schedules << " ms" << std::endl;
 	std::cout << "Final value multi thread = " << value << std::endl;
 
-	/*
+	
 
 	TestJob singleThreadJob = {};
 	singleThreadJob.values.resize(1);
@@ -81,9 +81,9 @@ int main(int argc, char** args)
 	}
 	auto singleThreadDelta = timer.ElapsedAsMilisecond();
 
-	std::cout << "Final value single thread = " << singleThreadJob.values[0] << std::endl;
 	std::cout << "Single thread schedules avarage time: " << singleThreadDelta / schedules << " ms" << std::endl;
-	*/
+	std::cout << "Final value single thread = " << singleThreadJob.values[0] << std::endl;
+	
 
 	//auto dependecy = jobSystemManager.Schedule(&job, 20);
 	//dependecy.Complete();

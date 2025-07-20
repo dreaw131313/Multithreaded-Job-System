@@ -1,3 +1,4 @@
+
 #include "JobManager.h"
 
 namespace JobSystem
@@ -7,9 +8,9 @@ namespace JobSystem
 		Initialize({});
 	}
 
-	JobManager::JobManager(const JobManagerConfig& config)
+	JobManager::JobManager(const JobManagerConfig& configuration)
 	{
-		Initialize(config);
+		Initialize(configuration);
 	}
 
 	JobManager::~JobManager()
