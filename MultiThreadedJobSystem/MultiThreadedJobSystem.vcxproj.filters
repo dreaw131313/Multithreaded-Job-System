@@ -24,6 +24,12 @@
     <ClCompile Include="src\JobSystem\JobDependency.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\JobSystem\JobSystemQueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JobSystem\JobQueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\JobSystem\JobManager.h">
@@ -51,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\JobSystem\RefCountedObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JobSystem\JobSystemQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

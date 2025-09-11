@@ -6,9 +6,11 @@
 #include "ThreadContext.h"
 #include "JobQueue.h"
 
+#include "JobSystemQueue.h"
+
 namespace JobSystem
 {
-	class JobManagerConfig 
+	class JobManagerConfig
 	{
 	public:
 		int m_WorkerThreadCount = -1;
@@ -16,6 +18,7 @@ namespace JobSystem
 		uint32_t m_MaxPhysicsJobs = 4096;
 		uint32_t m_MaxPhysicsBarriers = 16;
 
+		std::vector<JobSystemQueue*> m_JobQueues{};
 	};
 
 	class JobManager
@@ -34,17 +37,13 @@ namespace JobSystem
 
 		inline std::thread::id GetThreadID(int32_t threadIndex) const
 		{
-			if (threadIndex< m_WorkerThreadsCount)
+			if (threadIndex < m_WorkerThreadsCount)
 			{
 				return m_WorkerThreads[threadIndex].get_id();
 			}
 
 			return  {};
 		}
-
-		void Initialize(const JobManagerConfig& configuration);
-
-		void Destroy();
 
 		void CompleteJobs();
 
@@ -124,7 +123,16 @@ namespace JobSystem
 
 		bool m_bIsInitialized = false;
 
-		ThreadContext* m_MainThreadContext;
+		std::unique_ptr<ThreadContext> m_MainThreadContext;
+
+		std::vector<JobSystemQueue*> m_JobQueues{};
+		std::vector<JobSystemQueue*> m_MainThreadJobQueues{};
+
+	private:
+
+		void Initialize(const JobManagerConfig& configuration);
+
+		void Destroy();
 
 	};
 }

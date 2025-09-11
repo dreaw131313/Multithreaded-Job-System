@@ -33,7 +33,7 @@ namespace JobSystem
 		inline bool IsAwake() const
 		{
 			std::scoped_lock lock(m_Mutex);
-			return m_IsAwake > 0;
+			return m_PendingWakeups > 0;
 		}
 
 	private:
@@ -41,7 +41,7 @@ namespace JobSystem
 		mutable std::mutex m_Mutex = {};
 		std::condition_variable m_ConditionVariable = {};
 		uint64_t m_ThreadID = 0;
-		uint32_t m_IsAwake = 0;
+		uint32_t m_PendingWakeups = 0;
 		uint32_t m_ThreadIndex;
 
 		bool m_IsAlive = true;
@@ -50,23 +50,24 @@ namespace JobSystem
 		{
 			std::scoped_lock lock(m_Mutex);
 			m_IsAlive = false;
+			m_ConditionVariable.notify_one();
 		}
 
 		inline void WakeUp()
 		{
 			std::scoped_lock lock(m_Mutex);
-			m_IsAwake += 1;
+			m_PendingWakeups += 1;
 			m_ConditionVariable.notify_one();
 		}
 
 		inline void Sleep()
 		{
 			std::unique_lock lock(m_Mutex);
-			while (m_IsAwake == 0)
+			while (m_PendingWakeups == 0)
 			{
 				m_ConditionVariable.wait(lock);
 			}
-			m_IsAwake -= 1;
+			m_PendingWakeups -= 1;
 		}
 	};
 }

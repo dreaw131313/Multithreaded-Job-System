@@ -38,7 +38,7 @@ public:
 int main(int argc, char** args)
 {
 	JobSystem::JobManagerConfig config{};
-	JobSystem::JobManager jobSystem(config);
+	std::unique_ptr<JobSystem::JobManager> jobSystem = std::make_unique<JobSystem::JobManager>(config);
 
 	int64_t elementsCount = 1000000;
 
@@ -52,7 +52,7 @@ int main(int argc, char** args)
 	{
 		for (int i = 0; i < schedules; i++)
 		{
-			auto dependecy = jobSystem.ScheduleParallelForBatch2(&multiThreadJob, elementsCount, threadsToUse);
+			auto dependecy = jobSystem->ScheduleParallelForBatch2(&multiThreadJob, elementsCount, threadsToUse);
 			dependecy.Complete();
 		}
 	}
@@ -76,7 +76,7 @@ int main(int argc, char** args)
 	{
 		for (int i = 0; i < schedules; i++)
 		{
-			auto dependecy = jobSystem.ScheduleParallelForBatch2(&singleThreadJob, elementsCount, 1);
+			auto dependecy = jobSystem->ScheduleParallelForBatch2(&singleThreadJob, elementsCount, 1);
 			dependecy.Complete();
 		}
 	}
@@ -89,8 +89,9 @@ int main(int argc, char** args)
 	//auto dependecy = jobSystemManager.Schedule(&job, 20);
 	//dependecy.Complete();
 
-	jobSystem.CompleteJobs();
-	jobSystem.Destroy();
+	jobSystem->CompleteJobs();
+	jobSystem.reset();
+	std::cout << "Job system completed" <<  std::endl;
 
 	return 0;
 }

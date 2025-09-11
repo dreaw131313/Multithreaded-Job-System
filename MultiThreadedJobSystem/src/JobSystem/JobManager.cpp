@@ -54,112 +54,6 @@ namespace JobSystem
 		Destroy();
 	}
 
-	void JobManager::Initialize(const JobManagerConfig& configuration)
-	{
-		Destroy();
-
-		if (m_bIsInitialized)
-		{
-			return;
-		}
-		m_bIsInitialized = true;
-
-		int workerThreadCount = std::thread::hardware_concurrency() - 2;
-		if (workerThreadCount <= 0)
-		{
-			return;
-		}
-
-		if (configuration.m_WorkerThreadCount > 0)
-		{
-			m_WorkerThreadsCount = std::min(workerThreadCount, configuration.m_WorkerThreadCount);
-		}
-		else
-		{
-			m_WorkerThreadsCount = workerThreadCount;
-		}
-
-		auto threadLoop = [this](ThreadContext* context, JobQueue* jobQueue)
-		{
-			if (jobQueue == nullptr || context == nullptr)
-			{
-				return;
-			}
-
-			context->m_ThreadID = std::hash<std::thread::id>()(std::this_thread::get_id());
-
-			JobDequeueResult dequeueJobResult = {};
-			uint64_t remainingJobs = 0;
-
-			while (context->IsAlive())
-			{
-				if (jobQueue->DequeueJob(dequeueJobResult, remainingJobs))
-				{
-					dequeueJobResult.m_Job->Execute_Internal(
-						dequeueJobResult.m_JobContextIndex,
-						dequeueJobResult.m_JobElementCount,
-						dequeueJobResult.m_DesiredBatchSize,
-						*context
-					);
-					dequeueJobResult.m_JobDependecy->SetCompleted();
-				}
-
-				// if no job in queue then sleep:
-				if (remainingJobs == 0)
-				{
-					context->Sleep();
-				}
-			}
-		};
-
-		m_MainThreadContext = new ThreadContext(0);
-		for (int32_t i = 1; i <= m_WorkerThreadsCount; i++)
-		{
-			auto context = new ThreadContext(i);
-			m_WorkerThreadContexts.push_back(context);
-
-			auto& thread = m_WorkerThreads.emplace_back(threadLoop, context, &m_BaseJobsQueue);
-		}
-
-	}
-
-	void JobManager::Destroy()
-	{
-		if (!m_bIsInitialized)
-		{
-			return;
-		}
-		m_bIsInitialized = false;
-
-		// setting is alive flags to null
-		for (uint32_t i = 0; i < m_WorkerThreadContexts.size(); i++)
-		{
-			m_WorkerThreadContexts[i]->Kill();
-			m_WorkerThreadContexts[i]->WakeUp();
-		}
-
-		// joining threads
-		for (uint32_t i = 0; i < m_WorkerThreads.size(); i++)
-		{
-			m_WorkerThreads[i].join();
-		}
-
-		for (uint32_t i = 0; i < m_WorkerThreadContexts.size(); i++)
-		{
-			delete m_WorkerThreadContexts[i];
-		}
-
-		delete m_MainThreadContext;
-		m_MainThreadContext = nullptr;
-
-		// clearing containers:
-		m_WorkerThreadContexts.clear();
-		m_WorkerThreads.clear();
-
-		// clearing queue:
-		m_BaseJobsQueue.Clear();
-	}
-
 	void JobManager::CompleteJobs()
 	{
 		while (m_BaseJobsQueue.GetJobsCount() > 0)
@@ -214,7 +108,7 @@ namespace JobSystem
 			);
 
 			// wakeup correct number of threads:
-			WakeupThreads((int32_t)jobContextCount);
+			WakeupThreads(static_cast<int32_t>(jobContextCount));
 
 			return JobDependency(jobDependecyData, this);
 		}
@@ -315,44 +209,149 @@ namespace JobSystem
 
 	void JobManager::PerformJobsOnMainThread()
 	{
-		JobDequeueResult acquireJobResult = {};
-
-		while (m_BaseJobsQueue.GetJobsCount() == 0)
+		uint32_t remainingJobs = 0;
+		do
 		{
-			if (m_BaseJobsQueue.DequeueJob(acquireJobResult))
+			remainingJobs = 0;
+			for (auto jobQueue : m_MainThreadJobQueues)
 			{
-				acquireJobResult.m_Job->Execute_Internal(
-					acquireJobResult.m_JobContextIndex,
-					acquireJobResult.m_JobElementCount,
-					acquireJobResult.m_DesiredBatchSize,
-					*m_MainThreadContext
-				);
-				acquireJobResult.m_JobDependecy->SetCompleted();
+				if (jobQueue->CanExecuteOnMainThread())
+				{
+					jobQueue->ThreadLoop(*m_MainThreadContext);
+				}
+				remainingJobs += jobQueue->GetJobCount();
 			}
-		}
+		} while (remainingJobs > 0);
 	}
 
 	void JobManager::PerformJobsOnMainThreadUntilDepenedcyCompleted(JobDependency& dependecy)
 	{
-		JobDequeueResult acquireJobResult = {};
-
 		while (!dependecy.IsCompleted())
 		{
-			if (dependecy.IsCompleted())
+			for (auto jobQueue : m_MainThreadJobQueues)
 			{
-				break;
-			}
+				if (jobQueue->CanExecuteOnMainThread())
+				{
+					jobQueue->ThreadLoopOnMainThread(*m_MainThreadContext);
 
-			if (m_BaseJobsQueue.DequeueJob(acquireJobResult))
-			{
-				acquireJobResult.m_Job->Execute_Internal(
-					acquireJobResult.m_JobContextIndex,
-					acquireJobResult.m_JobElementCount,
-					acquireJobResult.m_DesiredBatchSize,
-					*m_MainThreadContext
-				);
-				acquireJobResult.m_JobDependecy->SetCompleted();
+					if (dependecy.IsCompleted())
+					{
+						break;
+					}
+				}
 			}
 		}
 	}
+
+	void JobManager::Initialize(const JobManagerConfig& configuration)
+	{
+		Destroy();
+
+		if (m_bIsInitialized)
+		{
+			return;
+		}
+		m_bIsInitialized = true;
+
+		int workerThreadCount = std::thread::hardware_concurrency() - 2;
+		if (workerThreadCount <= 0)
+		{
+			return;
+		}
+
+		if (configuration.m_WorkerThreadCount > 0)
+		{
+			m_WorkerThreadsCount = std::min(workerThreadCount, configuration.m_WorkerThreadCount);
+		}
+		else
+		{
+			m_WorkerThreadsCount = workerThreadCount;
+		}
+
+		// setup job queues
+		{
+			if (!configuration.m_JobQueues.empty())
+			{
+				m_JobQueues = configuration.m_JobQueues;
+				for (auto queue : m_JobQueues)
+				{
+					if (queue->CanExecuteOnMainThread())
+					{
+						m_MainThreadJobQueues.push_back(queue);
+					}
+				}
+			}
+
+			m_JobQueues.push_back(&m_BaseJobsQueue);
+			m_MainThreadJobQueues.push_back(&m_BaseJobsQueue);
+		}
+
+
+		auto threadLoop = [this](ThreadContext* context)
+		{
+			if (context == nullptr)
+			{
+				return;
+			}
+
+			context->m_ThreadID = std::hash<std::thread::id>()(std::this_thread::get_id());
+
+			while (context->IsAlive())
+			{
+				for (auto jobQueue : m_JobQueues)
+				{
+					jobQueue->ThreadLoop(*context);
+				}
+
+				context->Sleep();
+			}
+		};
+
+		m_MainThreadContext = std::make_unique<ThreadContext>(0);
+		for (int32_t i = 1; i <= m_WorkerThreadsCount; i++)
+		{
+			auto context = new ThreadContext(i);
+			m_WorkerThreadContexts.push_back(context);
+
+			auto& thread = m_WorkerThreads.emplace_back(threadLoop, context);
+		}
+
+	}
+
+	void JobManager::Destroy()
+	{
+		if (!m_bIsInitialized)
+		{
+			return;
+		}
+		m_bIsInitialized = false;
+
+		// setting is alive flags to null
+		for (uint32_t i = 0; i < m_WorkerThreadContexts.size(); i++)
+		{
+			m_WorkerThreadContexts[i]->Kill();
+			m_WorkerThreadContexts[i]->WakeUp();
+		}
+
+		// joining threads
+		for (uint32_t i = 0; i < m_WorkerThreads.size(); i++)
+		{
+			m_WorkerThreads[i].join();
+		}
+
+		for (uint32_t i = 0; i < m_WorkerThreadContexts.size(); i++)
+		{
+			delete m_WorkerThreadContexts[i];
+		}
+
+		m_MainThreadContext.reset();
+
+		// clearing containers:
+		m_WorkerThreadContexts.clear();
+		m_WorkerThreads.clear();
+
+		// clearing queue:
+		m_BaseJobsQueue.Clear();
+	}
+
 }

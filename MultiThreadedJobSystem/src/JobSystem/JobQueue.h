@@ -1,8 +1,12 @@
 #pragma once
+#pragma once
+
+#include <deque>
+
+#include "JobSystemQueue.h"
 #include "Job.h"
 #include "JobDependency.h"
 
-#include <deque>
 
 namespace JobSystem
 {
@@ -131,7 +135,7 @@ namespace JobSystem
 		}
 	};
 
-	class JobQueue
+	class JobQueue : public JobSystemQueue
 	{
 		struct Node final
 		{
@@ -257,6 +261,22 @@ namespace JobSystem
 			std::scoped_lock lock(m_Mutex);
 			return m_JobCount;
 		}
+
+
+		uint32_t GetJobCount() const noexcept override
+		{
+			std::scoped_lock lock(m_Mutex);
+			return m_JobCount;
+		}
+
+		void ThreadLoop(const ThreadContext& threadContext) override;
+
+		inline bool CanExecuteOnMainThread() const noexcept override
+		{
+			return true;
+		}
+
+		void ThreadLoopOnMainThread(const ThreadContext& threadContext) override;
 
 	private:
 		mutable std::mutex m_Mutex;
