@@ -3,7 +3,7 @@
 #include <atomic>
 #include <cstdint>
 
-namespace JobSystem
+namespace djs
 {
 
 	class RefCountedObject

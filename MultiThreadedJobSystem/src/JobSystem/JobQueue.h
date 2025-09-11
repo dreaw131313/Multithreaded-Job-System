@@ -8,7 +8,7 @@
 #include "JobDependency.h"
 
 
-namespace JobSystem
+namespace djs
 {
 	class JobManager;
 

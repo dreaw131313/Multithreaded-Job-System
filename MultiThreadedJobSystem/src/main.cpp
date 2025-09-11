@@ -16,10 +16,10 @@
 
 using namespace std::chrono_literals;
 
-class TestJob : public JobSystem::JobParallelForBatch
+class TestJob : public djs::JobParallelForBatch
 {
 public:
-	virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count, const JobSystem::ThreadContext& threadContext) override
+	virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count, const djs::ThreadContext& threadContext) override
 	{
 		int64_t value = values[batchIndex];
 		for (int64_t i = 0; i < count; i++)
@@ -37,8 +37,8 @@ public:
 
 int main(int argc, char** args)
 {
-	JobSystem::JobManagerConfig config{};
-	std::unique_ptr<JobSystem::JobManager> jobSystem = std::make_unique<JobSystem::JobManager>(config);
+	djs::JobManagerConfig config{};
+	std::unique_ptr<djs::JobManager> jobSystem = std::make_unique<djs::JobManager>(config);
 
 	int64_t elementsCount = 1000000;
 

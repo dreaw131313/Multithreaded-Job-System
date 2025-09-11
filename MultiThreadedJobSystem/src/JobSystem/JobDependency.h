@@ -3,7 +3,7 @@
 
 #include "RefCountedObject.h"
 
-namespace JobSystem
+namespace djs
 {
 
 	class JobDependencyData : public RefCountedObject

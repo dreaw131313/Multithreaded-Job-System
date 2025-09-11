@@ -8,7 +8,7 @@
 
 #include "JobManagerQueue.h"
 
-namespace JobSystem
+namespace djs
 {
 	class JobManagerConfig
 	{

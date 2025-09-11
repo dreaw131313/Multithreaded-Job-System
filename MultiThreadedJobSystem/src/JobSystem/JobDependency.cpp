@@ -2,7 +2,7 @@
 
 #include "JobManager.h"
 
-namespace JobSystem
+namespace djs
 {
 	JobDependency::JobDependency(const TRefCounterHandle<JobDependencyData>& dependcyData, JobManager& jobManager) :
 		m_DependencyData(dependcyData), m_JobManager(&jobManager)

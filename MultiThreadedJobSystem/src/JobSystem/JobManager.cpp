@@ -1,6 +1,6 @@
 #include "JobManager.h"
 
-namespace JobSystem
+namespace djs
 {
 
 	JobManager::JobManager()

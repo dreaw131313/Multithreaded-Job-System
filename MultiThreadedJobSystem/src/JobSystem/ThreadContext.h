@@ -1,7 +1,7 @@
 #pragma once
 #include "Core.h"
 
-namespace JobSystem
+namespace djs
 {
 	class ThreadContext
 	{

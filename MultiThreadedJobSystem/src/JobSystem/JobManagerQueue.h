@@ -4,7 +4,7 @@
 
 #include "ThreadContext.h"
 
-namespace JobSystem
+namespace djs
 {
 
 	class JobManagerQueue

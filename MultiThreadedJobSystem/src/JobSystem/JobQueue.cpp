@@ -2,7 +2,7 @@
 
 #include "JobManager.h"
 
-namespace JobSystem
+namespace djs
 {
 	struct BatchCountAndSize
 	{
