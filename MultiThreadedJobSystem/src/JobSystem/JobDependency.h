@@ -1,12 +1,15 @@
 #pragma once
 #include "Core.h"
 
+#include "RefCountedObject.h"
+
 namespace JobSystem
 {
-	class JobDependencyData
+
+	class JobDependencyData : public RefCountedObject
 	{
 	public:
-		JobDependencyData(int jobContextCount = 1):
+		JobDependencyData(int32_t jobContextCount = 1):
 			m_ContextCount(jobContextCount)
 		{
 
@@ -28,7 +31,7 @@ namespace JobSystem
 		}
 
 	private:
-		std::atomic<int> m_ContextCount = 1;
+		std::atomic<int32_t> m_ContextCount = 1;
 	};
 
 	class JobDependency
@@ -36,21 +39,19 @@ namespace JobSystem
 		friend class JobManager;
 
 	private:
-		JobDependency(std::shared_ptr<JobDependencyData>& dependcyData, JobManager* jobManager);
+		JobDependency(const TRefCounterHandle<JobDependencyData>& dependcyData, JobManager* jobManager);
 
 	public:
 		JobDependency()
 		{
 
 		}
-		~JobDependency()
-		{
-			m_DependencyData.reset();
-		}
+
+		~JobDependency() = default;
 
 		inline bool IsCompleted()
 		{
-			if (m_DependencyData)
+			if (m_DependencyData.IsValid())
 			{
 				return m_DependencyData->IsCompleted();
 			}
@@ -64,19 +65,16 @@ namespace JobSystem
 		/// </summary>
 		inline void CompleteWithoutPerformingJobs()
 		{
-			if (m_DependencyData)
-			{
-				while (!IsCompleted());
-			}
+			while (!IsCompleted());
 		}
 
 		inline bool IsValid() const
 		{
-			return m_JobManager != nullptr && m_DependencyData;
+			return m_JobManager != nullptr && m_DependencyData.IsValid();
 		}
 
 	private:
-		std::shared_ptr<JobDependencyData> m_DependencyData;
+		TRefCounterHandle<JobDependencyData> m_DependencyData{};
 		JobManager* m_JobManager = nullptr;
 	};
 }

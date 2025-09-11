@@ -202,7 +202,7 @@ namespace JobSystem
 	{
 		if (job != nullptr && jobContextCount > 0)
 		{
-			std::shared_ptr<JobDependencyData> jobDependecyData = std::make_shared<JobDependencyData>((int)jobContextCount);
+			TRefCounterHandle<JobDependencyData> jobDependecyData = TRefCounterHandle<JobDependencyData>::Make((int)jobContextCount);
 			m_BaseJobsQueue.QueueJob(
 				job,
 				jobDependecyData,

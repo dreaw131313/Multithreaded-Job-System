@@ -50,5 +50,8 @@
     <ClInclude Include="src\JobSystem\JobSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\JobSystem\RefCountedObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -11,7 +11,7 @@ namespace JobSystem
 		friend class JobQueue;
 	public:
 		std::vector<JobDependency> m_Dependecies = {};
-		std::shared_ptr<JobDependencyData> m_JobDependecyData = {};
+		TRefCounterHandle<JobDependencyData> m_JobDependecyData = {};
 		JobBase* m_Job = nullptr;
 		int64_t m_JobContextCount = -1;
 		int64_t m_CurrentJobContext = 0;
@@ -24,7 +24,7 @@ namespace JobSystem
 
 		JobQueueData(
 			JobBase* job,
-			std::shared_ptr<JobDependencyData>& jobDependecyData,
+			const TRefCounterHandle<JobDependencyData>& jobDependecyData,
 			int64_t jobContextCount,
 			int64_t jobElementCount,
 			int64_t desiredBatchSize,
@@ -62,7 +62,7 @@ namespace JobSystem
 
 		void Init(
 			JobBase* job,
-			std::shared_ptr<JobDependencyData>& jobDependecyData,
+			const TRefCounterHandle<JobDependencyData>& jobDependecyData,
 			int64_t jobContextCount,
 			int64_t jobElementCount,
 			int64_t desiredBatchSize,
@@ -82,7 +82,7 @@ namespace JobSystem
 		void Reset()
 		{
 			m_Dependecies.clear();
-			m_JobDependecyData.reset();
+			m_JobDependecyData.Reset();
 			m_Job = nullptr;
 			m_JobContextCount = -1;
 			m_CurrentJobContext = 0;
@@ -95,7 +95,7 @@ namespace JobSystem
 	class JobDequeueResult
 	{
 	public:
-		std::shared_ptr<JobDependencyData> m_JobDependecy = {};
+		TRefCounterHandle<JobDependencyData> m_JobDependecy = {};
 		JobBase* m_Job = nullptr;
 		int64_t m_JobContextIndex = 0;
 		int64_t m_JobElementCount = 0; // this is how much elements is passed to job, need for Parallel and PrallelBatch jobs, it indicates number of all elements which should be splited between all job contexts
@@ -108,7 +108,7 @@ namespace JobSystem
 		}
 
 		JobDequeueResult(
-			const std::shared_ptr<JobDependencyData>& jobDependecy,
+			const TRefCounterHandle<JobDependencyData>& jobDependecy,
 			JobBase* job,
 			int64_t jobContextIndex,
 			int64_t jobElementCount,
@@ -125,7 +125,7 @@ namespace JobSystem
 
 		inline void Reset()
 		{
-			m_JobDependecy.reset();
+			m_JobDependecy.Reset();
 			m_Job = nullptr;
 			m_JobContextIndex = std::numeric_limits<uint32_t>::max();
 		}
@@ -143,7 +143,7 @@ namespace JobSystem
 		public:
 			Node(
 				JobBase* job,
-				std::shared_ptr<JobDependencyData>& jobDependecyData,
+				const TRefCounterHandle<JobDependencyData>& jobDependecyData,
 				int64_t jobContextCount,
 				int64_t jobElementCount,
 				int64_t desiredBatchSize,
@@ -197,7 +197,7 @@ namespace JobSystem
 
 		bool QueueJob(
 			JobBase* job,
-			std::shared_ptr<JobDependencyData>& jobDependecyData,
+			const TRefCounterHandle<JobDependencyData>& jobDependecyData,
 			int64_t jobContextCount,
 			int64_t jobElementCount,
 			int64_t desiredBatchSize,
@@ -272,7 +272,7 @@ namespace JobSystem
 	private:
 		Node* CreateNode(
 			JobBase* job,
-			std::shared_ptr<JobDependencyData>& jobDependecyData,
+			const TRefCounterHandle<JobDependencyData>& jobDependecyData,
 			int64_t jobContextCount,
 			int64_t jobElementCount,
 			int64_t desiredBatchSize,
