@@ -4,8 +4,8 @@
 
 namespace JobSystem
 {
-	JobDependency::JobDependency(const TRefCounterHandle<JobDependencyData>& dependcyData, JobManager* jobManager) :
-		m_DependencyData(dependcyData), m_JobManager(jobManager)
+	JobDependency::JobDependency(const TRefCounterHandle<JobDependencyData>& dependcyData, JobManager& jobManager) :
+		m_DependencyData(dependcyData), m_JobManager(&jobManager)
 	{
 	}
 

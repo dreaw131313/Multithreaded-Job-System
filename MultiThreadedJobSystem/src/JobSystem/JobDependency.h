@@ -37,9 +37,10 @@ namespace JobSystem
 	class JobDependency
 	{
 		friend class JobManager;
+		friend class JobQueue;
 
 	private:
-		JobDependency(const TRefCounterHandle<JobDependencyData>& dependcyData, JobManager* jobManager);
+		JobDependency(const TRefCounterHandle<JobDependencyData>& dependcyData, JobManager&jobManager);
 
 	public:
 		JobDependency()

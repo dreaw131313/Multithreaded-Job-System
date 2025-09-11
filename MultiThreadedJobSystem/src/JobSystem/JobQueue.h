@@ -3,13 +3,15 @@
 
 #include <deque>
 
-#include "JobSystemQueue.h"
+#include "JobManagerQueue.h"
 #include "Job.h"
 #include "JobDependency.h"
 
 
 namespace JobSystem
 {
+	class JobManager;
+
 	class JobQueueData
 	{
 		friend class JobQueue;
@@ -135,7 +137,7 @@ namespace JobSystem
 		}
 	};
 
-	class JobQueue : public JobSystemQueue
+	class JobQueue : public JobManagerQueue
 	{
 		struct Node final
 		{
@@ -186,6 +188,78 @@ namespace JobSystem
 
 		}
 
+		JobDependency Schedule(
+			JobManager& parentJobManager,
+			JobBase* job,
+			int64_t jobContextCount = 1,
+			int64_t jobElementCount = 0,
+			int64_t desiredBatchSize = 0,
+			JobDependency* dependecies = nullptr,
+			uint64_t dependecyCount = 0
+		);
+
+		JobDependency Schedule(
+			JobManager& parentJobManager,
+			Job* job,
+			JobDependency* dependecies = nullptr,
+			uint64_t dependecyCount = 0
+		);
+
+		JobDependency ScheduleParallelFor(
+			JobManager& parentJobManager,
+			JobParallelFor* job,
+			int64_t elementCount,
+			int64_t batchSize,
+			JobDependency* dependecies = nullptr,
+			uint64_t dependecyCount = 0
+		);
+
+		JobDependency ScheduleParallelForBatch(
+			JobManager& parentJobManager,
+			JobParallelForBatch* job,
+			int64_t elementCount,
+			int64_t maxBatchSize,
+			JobDependency* dependecies = nullptr,
+			uint64_t dependecyCount = 0
+		);
+
+		JobDependency ScheduleParallelForBatch2(
+			JobManager& parentJobManager,
+			JobParallelForBatch* job,
+			int64_t elementCount,
+			int64_t maxBatches,
+			JobDependency* dependecies = nullptr,
+			uint64_t dependecyCount = 0
+		);
+
+		JobDependency ScheduleParallelForBatch3(
+			JobManager& parentJobManager,
+			JobParallelForBatch* job,
+			int64_t elementCount,
+			int64_t minBatchSize,
+			int64_t maxBatchCount,
+			JobDependency* dependecies = nullptr,
+			uint64_t dependecyCount = 0
+		);
+
+		void Clear();
+
+		uint32_t GetJobCount() const noexcept override
+		{
+			std::scoped_lock lock(m_Mutex);
+			return m_JobCount;
+		}
+
+		void ThreadLoop(const ThreadContext& threadContext) override;
+
+		inline bool CanExecuteOnMainThread() const noexcept override
+		{
+			return true;
+		}
+
+		void ThreadLoopOnMainThread(const ThreadContext& threadContext) override;
+
+	protected:
 		bool DequeueJob(JobDequeueResult& result)
 		{
 			std::scoped_lock lock(m_Mutex);
@@ -208,30 +282,6 @@ namespace JobSystem
 			JobDependency* dependecies = nullptr,
 			uint64_t dependecyCount = 0
 		);
-
-		void Clear();
-
-		inline uint32_t GetJobsCount() const
-		{
-			std::scoped_lock lock(m_Mutex);
-			return m_JobCount;
-		}
-
-
-		uint32_t GetJobCount() const noexcept override
-		{
-			std::scoped_lock lock(m_Mutex);
-			return m_JobCount;
-		}
-
-		void ThreadLoop(const ThreadContext& threadContext) override;
-
-		inline bool CanExecuteOnMainThread() const noexcept override
-		{
-			return true;
-		}
-
-		void ThreadLoopOnMainThread(const ThreadContext& threadContext) override;
 
 	private:
 		mutable std::mutex m_Mutex;
@@ -266,5 +316,32 @@ namespace JobSystem
 		void EraseNodeFromLinkedList(Node* node);
 
 		bool DequeueJob_Internal(JobDequeueResult& result);
+
+	};
+
+
+	/// <summary>
+	/// Queue whith max number of threads which can simultaneously perform jobs from this queue.
+	/// </summary>
+	class JobQueueWithThreadCountLimit : public JobQueue
+	{
+	public:
+		bool SetMaxSimultaneousThreadCount(uint32_t threadCount)
+		{
+			if (threadCount > 0)
+			{
+				m_MaxSimultaneousThreadCount.store(threadCount);
+				return true;
+			}
+			return false;
+		}
+
+		void ThreadLoop(const ThreadContext& threadContext) override;
+
+		void ThreadLoopOnMainThread(const ThreadContext& threadContext) override;
+
+	public:
+		std::atomic<uint32_t> m_MaxSimultaneousThreadCount = std::numeric_limits<uint32_t>::max();
+		std::atomic<uint32_t> m_CurrentWorkThreadCount = 0;
 	};
 }

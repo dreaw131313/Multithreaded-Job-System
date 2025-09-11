@@ -7,7 +7,7 @@ namespace JobSystem
 	{
 		friend class JobManager;
 	public:
-		ThreadContext(uint32_t threadIndex) :
+		ThreadContext(uint32_t threadIndex):
 			m_ThreadIndex(threadIndex),
 			m_ThreadID(threadIndex)
 		{
@@ -18,7 +18,7 @@ namespace JobSystem
 		{
 			return m_ThreadIndex;
 		}
-		
+
 		inline uint64_t GetThreadID() const
 		{
 			return m_ThreadID;
@@ -50,13 +50,14 @@ namespace JobSystem
 		{
 			std::scoped_lock lock(m_Mutex);
 			m_IsAlive = false;
+			m_PendingWakeups++;
 			m_ConditionVariable.notify_one();
 		}
 
 		inline void WakeUp()
 		{
 			std::scoped_lock lock(m_Mutex);
-			m_PendingWakeups += 1;
+			m_PendingWakeups++;
 			m_ConditionVariable.notify_one();
 		}
 
@@ -67,7 +68,7 @@ namespace JobSystem
 			{
 				m_ConditionVariable.wait(lock);
 			}
-			m_PendingWakeups -= 1;
+			m_PendingWakeups--;
 		}
 	};
 }

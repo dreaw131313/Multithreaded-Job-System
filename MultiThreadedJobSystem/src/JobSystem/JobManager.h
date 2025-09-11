@@ -6,7 +6,7 @@
 #include "ThreadContext.h"
 #include "JobQueue.h"
 
-#include "JobSystemQueue.h"
+#include "JobManagerQueue.h"
 
 namespace JobSystem
 {
@@ -18,7 +18,7 @@ namespace JobSystem
 		uint32_t m_MaxPhysicsJobs = 4096;
 		uint32_t m_MaxPhysicsBarriers = 16;
 
-		std::vector<JobSystemQueue*> m_JobQueues{};
+		std::vector<JobManagerQueue*> m_JobQueues{};
 	};
 
 	class JobManager
@@ -75,42 +75,102 @@ namespace JobSystem
 			int64_t desiredBatchSize = 0,
 			JobDependency* dependecies = nullptr,
 			uint64_t dependecyCount = 0
-		);
+		)
+		{
+			return m_BaseJobsQueue.Schedule(
+				*this,
+				job,
+				jobContextCount,
+				jobElementCount,
+				desiredBatchSize,
+				dependecies,
+				dependecyCount
+			);
+		}
 
-		JobDependency Schedule(Job* job, JobDependency* dependecies = nullptr, uint64_t dependecyCount = 0);
+		inline JobDependency Schedule(Job* job, JobDependency* dependecies = nullptr, uint64_t dependecyCount = 0)
+		{
+			return m_BaseJobsQueue.Schedule(
+				*this,
+				job,
+				dependecies,
+				dependecyCount
+			);
+		}
 
-		JobDependency ScheduleParallelFor(
+		inline JobDependency ScheduleParallelFor(
 			JobParallelFor* job,
 			int64_t elementCount,
 			int64_t batchSize,
 			JobDependency* dependecies = nullptr,
 			uint64_t dependecyCount = 0
-		);
+		)
+		{
+			return m_BaseJobsQueue.ScheduleParallelFor(
+				*this,
+				job,
+				elementCount,
+				batchSize,
+				dependecies,
+				dependecyCount
+			);
+		}
 
-		JobDependency ScheduleParallelForBatch(
+		inline JobDependency ScheduleParallelForBatch(
 			JobParallelForBatch* job,
 			int64_t elementCount,
 			int64_t maxBatchSize,
 			JobDependency* dependecies = nullptr,
 			uint64_t dependecyCount = 0
-		);
+		)
+		{
+			return m_BaseJobsQueue.ScheduleParallelForBatch(
+				*this,
+				job,
+				elementCount,
+				maxBatchSize,
+				dependecies,
+				dependecyCount
+			);
+		}
 
-		JobDependency ScheduleParallelForBatch2(
+		inline JobDependency ScheduleParallelForBatch2(
 			JobParallelForBatch* job,
 			int64_t elementCount,
 			int64_t maxBatches,
 			JobDependency* dependecies = nullptr,
 			uint64_t dependecyCount = 0
-		);
+		)
+		{
+			return m_BaseJobsQueue.ScheduleParallelForBatch2(
+				*this,
+				job,
+				elementCount,
+				maxBatches,
+				dependecies,
+				dependecyCount
+			);
+		}
 
-		JobDependency ScheduleParallelForBatch3(
+		inline JobDependency ScheduleParallelForBatch3(
 			JobParallelForBatch* job,
 			int64_t elementCount,
 			int64_t minBatchSize,
 			int64_t maxBatchCount,
 			JobDependency* dependecies = nullptr,
 			uint64_t dependecyCount = 0
-		);
+		)
+		{
+			return m_BaseJobsQueue.ScheduleParallelForBatch3(
+				*this,
+				job,
+				elementCount,
+				minBatchSize,
+				maxBatchCount,
+				dependecies,
+				dependecyCount
+			);
+		}
 
 		// Performs jobs until jobs queues are empty.
 		void PerformJobsOnMainThread();
@@ -126,12 +186,10 @@ namespace JobSystem
 
 		uint32_t m_LastWakedThreadIndex = 0;
 
-		bool m_bIsInitialized = false;
-
 		std::unique_ptr<ThreadContext> m_MainThreadContext;
 
-		std::vector<JobSystemQueue*> m_JobQueues{};
-		std::vector<JobSystemQueue*> m_MainThreadJobQueues{};
+		std::vector<JobManagerQueue*> m_JobQueues{};
+		std::vector<JobManagerQueue*> m_MainThreadJobQueues{};
 
 	private:
 

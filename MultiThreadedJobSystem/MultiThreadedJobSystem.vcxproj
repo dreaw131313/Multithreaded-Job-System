@@ -138,13 +138,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\JobSystem\JobQueue.cpp" />
-    <ClCompile Include="src\JobSystem\JobSystemQueue.cpp" />
     <ClCompile Include="src\JobSystem\JobDependency.cpp" />
     <ClCompile Include="src\JobSystem\JobManager.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\JobSystem\JobSystemQueue.h" />
+    <ClInclude Include="src\JobSystem\JobManagerQueue.h" />
     <ClInclude Include="src\JobSystem\Core.h" />
     <ClInclude Include="src\JobSystem\Job.h" />
     <ClInclude Include="src\JobSystem\JobDependency.h" />

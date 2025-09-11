@@ -3,42 +3,6 @@
 namespace JobSystem
 {
 
-	struct BatchCountAndSize
-	{
-	public:
-		int64_t BatchCount = 0;
-		int64_t BatchSize = 0;
-
-	public:
-		static BatchCountAndSize CalculateBatchCountAndSize(
-			int64_t elementCount,
-			int64_t minBatchSize,
-			int64_t maxBatchCount
-		)
-		{
-			uint32_t batchCountWithMinBatchSize = static_cast<uint32_t>(elementCount / minBatchSize);
-			if ((batchCountWithMinBatchSize * minBatchSize) < elementCount)
-			{
-				batchCountWithMinBatchSize += 1;
-			}
-			if (batchCountWithMinBatchSize <= maxBatchCount)
-			{
-				return { batchCountWithMinBatchSize, minBatchSize };
-			}
-
-			int64_t contextCount = maxBatchCount;
-			int64_t desiredBatchSize = elementCount / contextCount;
-			int64_t checkedElementsCount = desiredBatchSize * contextCount;
-
-			if (checkedElementsCount < elementCount)
-			{
-				desiredBatchSize += 1;
-			}
-
-			return { maxBatchCount, desiredBatchSize };
-		}
-	};
-
 	JobManager::JobManager()
 	{
 		Initialize({});
@@ -56,11 +20,7 @@ namespace JobSystem
 
 	void JobManager::CompleteJobs()
 	{
-		while (m_BaseJobsQueue.GetJobsCount() > 0)
-		{
-			PerformJobsOnMainThread();
-		}
-
+		PerformJobsOnMainThread();
 		int32_t sleepingthreads = 0;
 		while (sleepingthreads != m_WorkerThreadsCount)
 		{
@@ -83,128 +43,6 @@ namespace JobSystem
 			m_WorkerThreadContexts[m_LastWakedThreadIndex]->WakeUp();
 			m_LastWakedThreadIndex = (m_LastWakedThreadIndex + 1) % m_WorkerThreadsCount;
 		}
-	}
-
-	JobDependency JobManager::Schedule(
-		JobBase* job,
-		int64_t jobContextCount,
-		int64_t jobElementCount,
-		int64_t desiredBatchSize,
-		JobDependency* dependecies,
-		uint64_t dependecyCount
-	)
-	{
-		if (job != nullptr && jobContextCount > 0)
-		{
-			TRefCounterHandle<JobDependencyData> jobDependecyData = TRefCounterHandle<JobDependencyData>::Make((int)jobContextCount);
-			m_BaseJobsQueue.QueueJob(
-				job,
-				jobDependecyData,
-				jobContextCount,
-				jobElementCount,
-				desiredBatchSize,
-				dependecies,
-				dependecyCount
-			);
-
-			// wakeup correct number of threads:
-			WakeupThreads(static_cast<int32_t>(jobContextCount));
-
-			return JobDependency(jobDependecyData, this);
-		}
-
-		return JobDependency();
-	}
-
-	JobDependency JobManager::Schedule(Job* job, JobDependency* dependecies, uint64_t dependecyCount)
-	{
-		return Schedule(job, 1, -1, -1, dependecies, dependecyCount);
-	}
-
-	JobDependency JobManager::ScheduleParallelFor(JobParallelFor* job, int64_t elementCount, int64_t batchSize, JobDependency* dependecies, uint64_t dependecyCount)
-	{
-		if (elementCount > 0 && batchSize > 0)
-		{
-			int64_t contextCount = elementCount / batchSize;
-			int64_t modulo = elementCount % batchSize;
-			if (modulo > 0)
-			{
-				contextCount += 1;
-			}
-
-			return Schedule(job, contextCount, elementCount, batchSize, dependecies, dependecyCount);
-		}
-
-		return JobDependency();
-	}
-
-	JobDependency JobManager::ScheduleParallelForBatch(JobParallelForBatch* job, int64_t elementCount, int64_t maxBatchSize, JobDependency* dependecies, uint64_t dependecyCount)
-	{
-		if (elementCount > 0 && maxBatchSize > 0)
-		{
-			if (maxBatchSize >= elementCount)
-			{
-				return Schedule(job, 1, elementCount, elementCount, dependecies, dependecyCount);
-			}
-
-			int64_t contextCount = elementCount / maxBatchSize;
-			int64_t modulo = elementCount % maxBatchSize;
-			if (modulo > 0)
-			{
-				contextCount += 1;
-			}
-
-			return Schedule(job, contextCount, elementCount, maxBatchSize, dependecies, dependecyCount);
-		}
-
-		return JobDependency();
-	}
-
-	JobDependency JobManager::ScheduleParallelForBatch2(JobParallelForBatch* job, int64_t elementCount, int64_t maxBatches, JobDependency* dependecies, uint64_t dependecyCount)
-	{
-		if (elementCount > 0 && maxBatches > 0)
-		{
-			if (maxBatches == 1)
-			{
-				return Schedule(job, 1, elementCount, elementCount, dependecies, dependecyCount);
-			}
-			else if (elementCount == maxBatches)
-			{
-				return Schedule(job, maxBatches, elementCount, 1, dependecies, dependecyCount);
-			}
-
-			int64_t contextCount = maxBatches;
-			int64_t desiredBatchSize = elementCount / contextCount;
-			int64_t checkedElementsCount = desiredBatchSize * contextCount;
-
-			if (checkedElementsCount < elementCount)
-			{
-				desiredBatchSize += 1;
-			}
-
-			return Schedule(job, contextCount, elementCount, desiredBatchSize, dependecies, dependecyCount);
-		}
-
-		return JobDependency();
-	}
-
-	JobDependency JobManager::ScheduleParallelForBatch3(
-		JobParallelForBatch* job,
-		int64_t elementCount,
-		int64_t minBatchSize,
-		int64_t maxBatchCount,
-		JobDependency* dependecies,
-		uint64_t dependecyCount
-	)
-	{
-		if (elementCount > 0 && minBatchSize > 0 && maxBatchCount > 0)
-		{
-			BatchCountAndSize size = BatchCountAndSize::CalculateBatchCountAndSize(elementCount, minBatchSize, maxBatchCount);
-
-			return Schedule(job, size.BatchCount, elementCount, size.BatchSize, dependecies, dependecyCount);
-		}
-
-		return JobDependency();
 	}
 
 	void JobManager::PerformJobsOnMainThread()
@@ -245,14 +83,6 @@ namespace JobSystem
 
 	void JobManager::Initialize(const JobManagerConfig& configuration)
 	{
-		Destroy();
-
-		if (m_bIsInitialized)
-		{
-			return;
-		}
-		m_bIsInitialized = true;
-
 		int workerThreadCount = std::thread::hardware_concurrency() - 2;
 		if (workerThreadCount <= 0)
 		{
@@ -320,12 +150,6 @@ namespace JobSystem
 
 	void JobManager::Destroy()
 	{
-		if (!m_bIsInitialized)
-		{
-			return;
-		}
-		m_bIsInitialized = false;
-
 		// setting is alive flags to null
 		for (uint32_t i = 0; i < m_WorkerThreadContexts.size(); i++)
 		{

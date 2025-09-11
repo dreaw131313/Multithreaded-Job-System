@@ -7,12 +7,12 @@
 namespace JobSystem
 {
 
-	class JobSystemQueue
+	class JobManagerQueue
 	{
 	public:
-		JobSystemQueue() = default;
+		JobManagerQueue() = default;
 
-		~JobSystemQueue() = default;
+		~JobManagerQueue() = default;
 
 		virtual uint32_t GetJobCount() const noexcept = 0;
 
