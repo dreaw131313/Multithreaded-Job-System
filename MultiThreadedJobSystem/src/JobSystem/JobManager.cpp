@@ -35,7 +35,7 @@ namespace djs
 		}
 	}
 
-	void JobManager::WakeupThreads(int32_t threadsToWakeUp)
+	void JobManager::WakeUpThreads(int32_t threadsToWakeUp)
 	{
 		int32_t maxThreads = std::max(threadsToWakeUp, m_WorkerThreadsCount);
 		for (int32_t i = 0; i < maxThreads; i++)
@@ -102,9 +102,14 @@ namespace djs
 		{
 			if (!configuration.m_JobQueues.empty())
 			{
-				m_JobQueues = configuration.m_JobQueues;
-				for (auto queue : m_JobQueues)
+				for (auto queue : configuration.m_JobQueues)
 				{
+					if (queue == nullptr)
+					{
+						continue;
+					}
+
+					m_JobQueues.push_back(queue);
 					if (queue->CanExecuteOnMainThread())
 					{
 						m_MainThreadJobQueues.push_back(queue);

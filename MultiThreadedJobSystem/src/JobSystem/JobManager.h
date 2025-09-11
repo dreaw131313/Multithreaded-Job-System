@@ -14,10 +14,6 @@ namespace djs
 	{
 	public:
 		int m_WorkerThreadCount = -1;
-		// Physics
-		uint32_t m_MaxPhysicsJobs = 4096;
-		uint32_t m_MaxPhysicsBarriers = 16;
-
 		std::vector<JobManagerQueue*> m_JobQueues{};
 	};
 
@@ -52,7 +48,7 @@ namespace djs
 
 		void CompleteJobs();
 
-		void WakeupThreads(int32_t threadsToWakeUp);
+		void WakeUpThreads(int32_t threadsToWakeUp);
 
 		inline uint32_t GetThreadIndex(uint64_t threadID) const
 		{

@@ -4,42 +4,6 @@
 
 namespace djs
 {
-	struct BatchCountAndSize
-	{
-	public:
-		int64_t BatchCount = 0;
-		int64_t BatchSize = 0;
-
-	public:
-		static BatchCountAndSize CalculateBatchCountAndSize(
-			int64_t elementCount,
-			int64_t minBatchSize,
-			int64_t maxBatchCount
-		)
-		{
-			uint32_t batchCountWithMinBatchSize = static_cast<uint32_t>(elementCount / minBatchSize);
-			if ((batchCountWithMinBatchSize * minBatchSize) < elementCount)
-			{
-				batchCountWithMinBatchSize += 1;
-			}
-			if (batchCountWithMinBatchSize <= maxBatchCount)
-			{
-				return { batchCountWithMinBatchSize, minBatchSize };
-			}
-
-			int64_t contextCount = maxBatchCount;
-			int64_t desiredBatchSize = elementCount / contextCount;
-			int64_t checkedElementsCount = desiredBatchSize * contextCount;
-
-			if (checkedElementsCount < elementCount)
-			{
-				desiredBatchSize += 1;
-			}
-
-			return { maxBatchCount, desiredBatchSize };
-		}
-	};
-
 	void JobQueue::Clear()
 	{
 		std::scoped_lock lock(m_Mutex);
@@ -76,7 +40,7 @@ namespace djs
 			);
 
 			// wakeup correct number of threads:
-			parentJobManager.WakeupThreads(static_cast<int32_t>(jobContextCount));
+			parentJobManager.WakeUpThreads(static_cast<int32_t>(jobContextCount));
 
 			return JobDependency(jobDependecyData, parentJobManager);
 		}
