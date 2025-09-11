@@ -8,12 +8,16 @@
 
 namespace JobSystem
 {
-	struct JobManagerConfig
+	class JobManagerConfig 
 	{
 	public:
 		int m_WorkerThreadCount = -1;
+		// Physics
+		uint32_t m_MaxPhysicsJobs = 4096;
+		uint32_t m_MaxPhysicsBarriers = 16;
 
 	};
+
 	class JobManager
 	{
 	public:
@@ -30,7 +34,7 @@ namespace JobSystem
 
 		inline std::thread::id GetThreadID(int32_t threadIndex) const
 		{
-			if (threadIndex < m_WorkerThreadsCount)
+			if (threadIndex< m_WorkerThreadsCount)
 			{
 				return m_WorkerThreads[threadIndex].get_id();
 			}
@@ -91,6 +95,15 @@ namespace JobSystem
 			JobParallelForBatch* job,
 			int64_t elementCount,
 			int64_t maxBatches,
+			JobDependency* dependecies = nullptr,
+			uint64_t dependecyCount = 0
+		);
+
+		JobDependency ScheduleParallelForBatch3(
+			JobParallelForBatch* job,
+			int64_t elementCount,
+			int64_t minBatchSize,
+			int64_t maxBatchCount,
 			JobDependency* dependecies = nullptr,
 			uint64_t dependecyCount = 0
 		);

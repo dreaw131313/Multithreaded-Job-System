@@ -70,6 +70,11 @@ namespace JobSystem
 			}
 		}
 
+		inline bool IsValid() const
+		{
+			return m_JobManager != nullptr && m_DependencyData;
+		}
+
 	private:
 		std::shared_ptr<JobDependencyData> m_DependencyData;
 		JobManager* m_JobManager = nullptr;

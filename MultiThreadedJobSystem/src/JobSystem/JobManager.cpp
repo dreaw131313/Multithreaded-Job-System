@@ -1,8 +1,44 @@
-
 #include "JobManager.h"
 
 namespace JobSystem
 {
+
+	struct BatchCountAndSize
+	{
+	public:
+		int64_t BatchCount = 0;
+		int64_t BatchSize = 0;
+
+	public:
+		static BatchCountAndSize CalculateBatchCountAndSize(
+			int64_t elementCount,
+			int64_t minBatchSize,
+			int64_t maxBatchCount
+		)
+		{
+			uint32_t batchCountWithMinBatchSize = static_cast<uint32_t>(elementCount / minBatchSize);
+			if ((batchCountWithMinBatchSize * minBatchSize) < elementCount)
+			{
+				batchCountWithMinBatchSize += 1;
+			}
+			if (batchCountWithMinBatchSize <= maxBatchCount)
+			{
+				return { batchCountWithMinBatchSize, minBatchSize };
+			}
+
+			int64_t contextCount = maxBatchCount;
+			int64_t desiredBatchSize = elementCount / contextCount;
+			int64_t checkedElementsCount = desiredBatchSize * contextCount;
+
+			if (checkedElementsCount < elementCount)
+			{
+				desiredBatchSize += 1;
+			}
+
+			return { maxBatchCount, desiredBatchSize };
+		}
+	};
+
 	JobManager::JobManager()
 	{
 		Initialize({});
@@ -247,20 +283,31 @@ namespace JobSystem
 			int64_t desiredBatchSize = elementCount / contextCount;
 			int64_t checkedElementsCount = desiredBatchSize * contextCount;
 
-			if (elementCount > checkedElementsCount)
+			if (checkedElementsCount < elementCount)
 			{
 				desiredBatchSize += 1;
-				contextCount = elementCount / desiredBatchSize;
-			}
-
-			int64_t modulo = elementCount % (desiredBatchSize * contextCount);
-
-			if (modulo > 0)
-			{
-				contextCount += 1;
 			}
 
 			return Schedule(job, contextCount, elementCount, desiredBatchSize, dependecies, dependecyCount);
+		}
+
+		return JobDependency();
+	}
+
+	JobDependency JobManager::ScheduleParallelForBatch3(
+		JobParallelForBatch* job,
+		int64_t elementCount,
+		int64_t minBatchSize,
+		int64_t maxBatchCount,
+		JobDependency* dependecies,
+		uint64_t dependecyCount
+	)
+	{
+		if (elementCount > 0 && minBatchSize > 0 && maxBatchCount > 0)
+		{
+			BatchCountAndSize size = BatchCountAndSize::CalculateBatchCountAndSize(elementCount, minBatchSize, maxBatchCount);
+
+			return Schedule(job, size.BatchCount, elementCount, size.BatchSize, dependecies, dependecyCount);
 		}
 
 		return JobDependency();

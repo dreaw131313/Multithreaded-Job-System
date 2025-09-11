@@ -9,7 +9,7 @@ namespace JobSystem
 	public:
 		ThreadContext(uint32_t threadIndex) :
 			m_ThreadIndex(threadIndex),
-			m_ThreadID(static_cast<uint64_t>(threadIndex))
+			m_ThreadID(threadIndex)
 		{
 
 		}

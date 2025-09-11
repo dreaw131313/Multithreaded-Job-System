@@ -12,13 +12,14 @@
 
 #include "JobSystem/JobSystem.h"
 
+
+
 using namespace std::chrono_literals;
-using namespace JobSystem;
 
 class TestJob : public JobSystem::JobParallelForBatch
 {
 public:
-	virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count, const ThreadContext& threadContext) override
+	virtual void Execute(int64_t batchIndex, int64_t startIndex, int64_t count, const JobSystem::ThreadContext& threadContext) override
 	{
 		int64_t value = values[batchIndex];
 		for (int64_t i = 0; i < count; i++)
@@ -37,7 +38,7 @@ public:
 int main(int argc, char** args)
 {
 	JobSystem::JobManagerConfig config{};
-	JobManager jobSystem(config);
+	JobSystem::JobManager jobSystem(config);
 
 	int64_t elementsCount = 1000000;
 
