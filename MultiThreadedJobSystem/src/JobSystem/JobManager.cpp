@@ -83,7 +83,7 @@ namespace djs
 
 	void JobManager::Initialize(const JobManagerConfig& configuration)
 	{
-		int workerThreadCount = std::thread::hardware_concurrency() - 2;
+		int workerThreadCount = std::thread::hardware_concurrency();
 		if (workerThreadCount <= 0)
 		{
 			return;
