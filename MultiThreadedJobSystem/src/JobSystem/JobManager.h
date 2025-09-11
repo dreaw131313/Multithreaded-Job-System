@@ -30,6 +30,11 @@ namespace JobSystem
 
 		~JobManager();
 
+		JobManager(const JobManager&) = delete;
+		JobManager(JobManager&&) noexcept = delete;
+		JobManager& operator=(const JobManager&) = delete;
+		JobManager& operator=(JobManager&&)noexcept = delete;
+
 		inline uint32_t GetWorkerThreadsCount() const
 		{
 			return m_WorkerThreadsCount;
