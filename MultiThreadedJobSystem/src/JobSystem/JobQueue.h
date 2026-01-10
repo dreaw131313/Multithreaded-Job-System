@@ -320,7 +320,7 @@ namespace djs
 		);
 
 	private:
-		mutable std::mutex m_Mutex;
+		mutable std::shared_mutex m_Mutex;
 
 		std::deque<Node> m_NodeAllocator{};
 		std::vector<Node*> m_FreeNodes{};
