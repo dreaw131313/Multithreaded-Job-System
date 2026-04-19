@@ -35,13 +35,15 @@ namespace djs
 		}
 	}
 
-	void JobManager::WakeUpThreads(int32_t threadsToWakeUp)
+	void JobManager::WakeUpThreads(uint32_t threadsToWakeUp)
 	{
-		int32_t maxThreads = std::max(threadsToWakeUp, m_WorkerThreadsCount);
-		for (int32_t i = 0; i < maxThreads; i++)
+		const uint32_t maxThreads = std::min(std::max(threadsToWakeUp, 1u), static_cast<uint32_t>(m_WorkerThreadsCount));
+		const uint32_t startThreadToWakeUp = m_LastWakedThreadIndex.fetch_add(threadsToWakeUp);
+
+		for (uint32_t i = 0; i < maxThreads; i++)
 		{
-			m_WorkerThreadContexts[m_LastWakedThreadIndex]->WakeUp();
-			m_LastWakedThreadIndex = (m_LastWakedThreadIndex + 1) % m_WorkerThreadsCount;
+			uint32_t threadIndex = (startThreadToWakeUp + i) % m_WorkerThreadsCount;
+			m_WorkerThreadContexts[threadIndex]->WakeUp();
 		}
 	}
 

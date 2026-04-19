@@ -48,7 +48,7 @@ namespace djs
 
 		void CompleteJobs();
 
-		void WakeUpThreads(int32_t threadsToWakeUp);
+		void WakeUpThreads(uint32_t threadsToWakeUp);
 
 		inline uint32_t GetThreadIndex(uint64_t threadID) const
 		{
@@ -180,7 +180,7 @@ namespace djs
 		std::vector<std::thread> m_WorkerThreads;
 		int32_t m_WorkerThreadsCount = 0;
 
-		uint32_t m_LastWakedThreadIndex = 0;
+		std::atomic<uint32_t> m_LastWakedThreadIndex = 0;
 
 		std::unique_ptr<ThreadContext> m_MainThreadContext;
 
